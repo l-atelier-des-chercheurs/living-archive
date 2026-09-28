@@ -34,53 +34,6 @@
       >
         <SlashLogo class="_postcard--shareLogo" />
       </a>
-      <div class="_postcard--shareActions">
-        <button
-          type="button"
-          class="_postcard--editBtn"
-          @click="goHome"
-        >
-          <sl-icon name="arrow-left"></sl-icon>
-          {{ $t("back") }}
-        </button>
-        <button
-          v-if="can_edit"
-          type="button"
-          class="_postcard--editBtn"
-          :disabled="is_exporting || !can_export"
-          :title="$t('print_1_hint')"
-          @click="exportPrint(1)"
-        >
-          <sl-icon
-            :name="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
-            :class="{ _spinner: exporting_print === 1 }"
-          ></sl-icon>
-          {{ $t("print_1") }}
-        </button>
-        <button
-          v-if="can_edit"
-          type="button"
-          class="_postcard--editBtn"
-          :disabled="is_exporting || !can_export"
-          :title="$t('print_4_hint')"
-          @click="exportPrint(4)"
-        >
-          <sl-icon
-            :name="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
-            :class="{ _spinner: exporting_print === 4 }"
-          ></sl-icon>
-          {{ $t("print_4") }}
-        </button>
-        <button
-          v-if="can_edit"
-          type="button"
-          class="_postcard--editBtn"
-          @click="goToEditor"
-        >
-          <sl-icon name="pencil"></sl-icon>
-          {{ $t("edit") }}
-        </button>
-      </div>
     </header>
 
     <div
@@ -487,6 +440,50 @@
           {{ $t("remove") }}
         </button>
       </div>
+    </div>
+
+    <div v-if="is_share_view" class="_postcard--shareActions">
+      <button type="button" class="_postcard--editBtn" @click="goHome">
+        <sl-icon name="arrow-left"></sl-icon>
+        {{ $t("back") }}
+      </button>
+      <button
+        v-if="can_edit"
+        type="button"
+        class="_postcard--editBtn"
+        :disabled="is_exporting || !can_export"
+        :title="$t('print_1_hint')"
+        @click="exportPrint(1)"
+      >
+        <sl-icon
+          :name="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
+          :class="{ _spinner: exporting_print === 1 }"
+        ></sl-icon>
+        {{ $t("print_1") }}
+      </button>
+      <button
+        v-if="can_edit"
+        type="button"
+        class="_postcard--editBtn"
+        :disabled="is_exporting || !can_export"
+        :title="$t('print_4_hint')"
+        @click="exportPrint(4)"
+      >
+        <sl-icon
+          :name="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
+          :class="{ _spinner: exporting_print === 4 }"
+        ></sl-icon>
+        {{ $t("print_4") }}
+      </button>
+      <button
+        v-if="can_edit"
+        type="button"
+        class="_postcard--editBtn"
+        @click="goToEditor"
+      >
+        <sl-icon name="pencil"></sl-icon>
+        {{ $t("edit") }}
+      </button>
     </div>
 
     <RemoveMenu2
@@ -1798,7 +1795,9 @@ export default {
 }
 
 ._postcard--logo {
-  width: clamp(5.5rem, 28vw, 7.5rem);
+  display: block;
+  width: clamp(7.5rem, 18vw, 9.5rem);
+  height: auto;
 }
 
 ._postcard--headerText {
@@ -1973,6 +1972,7 @@ export default {
   flex-direction: column;
   align-items: stretch;
   padding: calc(var(--spacing) * 2);
+  padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -2005,11 +2005,29 @@ export default {
 }
 
 ._postcard--shareActions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: safe center;
   gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem clamp(1rem, 4vw, 2rem)
+    calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border-top: 1px solid color-mix(in srgb, var(--c-slash-blue) 18%, white);
+  background: #fff;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+
+  ._postcard--editBtn {
+    flex: 0 0 auto;
+  }
 }
 
 ._postcard--shell.is--share {
