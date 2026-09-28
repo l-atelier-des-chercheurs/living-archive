@@ -110,6 +110,9 @@
       @folderRemoved="$emit('folderRemoved')"
     />
   </div>
+  <div v-else-if="folder_not_found" class="_folderNotFound">
+    <NotFound />
+  </div>
 </template>
 <script>
 import TopLeftMenu from "@/components/slash/TopLeftMenu.vue";
@@ -122,6 +125,7 @@ import ItemModal from "@/components/slash/ItemModal.vue";
 import FolderSettingsModal from "@/components/slash/FolderSettingsModal.vue";
 import PublicationsSidebar from "@/components/slash/PublicationsSidebar.vue";
 import CanvasSelectionBar from "@/components/slash/CanvasSelectionBar.vue";
+import NotFound from "@/components/NotFound.vue";
 
 export default {
   props: {
@@ -141,10 +145,12 @@ export default {
     FolderSettingsModal,
     PublicationsSidebar,
     CanvasSelectionBar,
+    NotFound,
   },
   data() {
     return {
       folder: null,
+      folder_not_found: false,
       view_mode: "canvas",
       filter_bar_open: false,
       author_filter: null,
@@ -213,6 +219,7 @@ export default {
           this.selected_files = [];
         }
 
+        this.folder_not_found = false;
         try {
           this.folder = await this.loadFolder(new_folder_path);
           this.media_list_paths = [];
@@ -222,13 +229,7 @@ export default {
           }
         } catch (error) {
           this.folder = null;
-          if (this.$route.path !== "/") {
-            this.$router.replace({
-              name: "Accueil",
-              query: {},
-            });
-          }
-          this.$emit("toggleFoldersSidebar", true);
+          this.folder_not_found = true;
         }
       },
     },
@@ -721,6 +722,11 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+._folderNotFound {
+  width: 100%;
+  height: 100%;
+}
+
 ._folderView {
   --folder-bg: var(--c-slash-blue, var(--c-bleuvert));
   --folder-fg: var(--c-slash-mint, #e5ffdb);

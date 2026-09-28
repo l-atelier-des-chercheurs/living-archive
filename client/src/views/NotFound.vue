@@ -26,15 +26,7 @@ export default {
 <style lang="scss" scoped>
 ._notFound {
   width: 100%;
-  min-height: 60vh;
-  margin: 0 auto;
-  max-width: var(--max-column-width);
-  padding: calc(var(--spacing) * 1);
-
-  display: flex;
-  flex-flow: column nowrap;
-  justify-content: center;
-  align-items: center;
-  gap: calc(var(--spacing) / 2);
+  height: 100%;
+  min-height: 100vh;
 }
 </style>

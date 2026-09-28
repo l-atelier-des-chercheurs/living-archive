@@ -73,7 +73,7 @@ const routes = [
     component: () => import("@/views/SlashHomeView.vue"),
   },
   {
-    path: "/:pathMatch(.*)*",
+    path: "*",
     name: "NotFound",
     component: () => import("@/views/NotFound.vue"),
   },
