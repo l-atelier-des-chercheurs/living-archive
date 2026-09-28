@@ -26,7 +26,7 @@
     </header>
 
     <header v-else class="_postcard--shareHeader">
-      <SiteBrand :link_home="true" />
+      <SiteBrand :link_home="true" :new_tab="true" />
     </header>
 
     <div
@@ -432,10 +432,6 @@
     </div>
 
     <div v-if="is_share_view" class="_postcard--shareActions">
-      <button type="button" class="_postcard--editBtn" @click="goHome">
-        <b-icon icon="arrow-left" />
-        {{ $t("back") }}
-      </button>
       <PostcardShareMenu
         v-if="!is_loading && !load_error"
         trigger_class="_postcard--editBtn"

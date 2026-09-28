@@ -10,7 +10,7 @@
       </div>
       <template v-else>
         <GeneralPasswordModal
-          v-if="show_general_password_modal"
+          v-if="show_general_password_gate"
           @close="show_general_password_modal = false"
         />
         <template v-else>
@@ -77,8 +77,18 @@ export default {
     this.$eventHub.$off("socketio.connect_error", this.socketConnectError);
     this.$eventHub.$off("socketio.disconnect", this.showDisconnectModal);
   },
-  watch: {},
+  watch: {
+    "$api.general_password"(general_password) {
+      if (general_password) this.show_general_password_modal = false;
+    },
+  },
   computed: {
+    show_general_password_gate() {
+      // the home page asks for the general password inline
+      return (
+        this.show_general_password_modal && this.$route.name !== "Accueil"
+      );
+    },
     route_view_key() {
       return (
         this.$route.name ||

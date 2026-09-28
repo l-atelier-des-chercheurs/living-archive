@@ -40,8 +40,48 @@
         >
       </section>
 
+      <section
+        v-if="needs_general_password"
+        class="_foldersPanel--section _foldersPanel--gate"
+      >
+        <h2 class="_foldersPanel--sectionTitle">
+          {{ $t("log_in_to_browse") }}
+        </h2>
+        <p class="_foldersPanel--gateText">
+          {{ $t("log_in_to_browse_expl") }}
+        </p>
+        <form
+          class="_foldersPanel--gateForm"
+          @submit.prevent="submitGeneralPassword"
+        >
+          <TextInput
+            :label_str="'general_password'"
+            :content.sync="general_password_to_submit"
+            :required="true"
+            :input_type="'password'"
+            @toggleValidity="($event) => (general_password_allow_send = $event)"
+            @onEnter="submitGeneralPassword"
+          />
+          <p v-if="general_password_error" class="u-errorMsg">
+            {{ general_password_error }}
+          </p>
+          <div>
+            <button
+              type="submit"
+              class="u-button _foldersPanel--gateCta"
+              :disabled="!general_password_allow_send"
+            >
+              {{ $t("access") }}
+            </button>
+          </div>
+        </form>
+      </section>
+
       <!-- Publication section (home only) -->
-      <section v-if="!is_overlay" class="_foldersPanel--section">
+      <section
+        v-if="!is_overlay && !needs_general_password"
+        class="_foldersPanel--section"
+      >
         <h2 class="_foldersPanel--sectionTitle">Publication</h2>
         <div class="_foldersPanel--grid">
           <button
@@ -103,7 +143,7 @@
         </div>
       </section>
 
-      <section class="_foldersPanel--section">
+      <section v-if="!needs_general_password" class="_foldersPanel--section">
         <h2 v-if="!is_overlay" class="_foldersPanel--sectionTitle">
           Documentation spaces
         </h2>
@@ -263,9 +303,16 @@ export default {
       type: Boolean,
       default: false,
     },
+    needs_general_password: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
+      general_password_to_submit: "",
+      general_password_allow_send: false,
+      general_password_error: "",
       show_create_folder_modal: false,
       create_template: null,
       create_title: "",
@@ -306,17 +353,38 @@ export default {
       immediate: true,
       handler(is_overlay) {
         if (!is_overlay) {
-          this.loadPublications();
+          if (!this.needs_general_password) this.loadPublications();
         } else {
           this.leavePublicationsRoom();
         }
       },
+    },
+    needs_general_password(needs_general_password) {
+      if (!needs_general_password && !this.is_overlay) {
+        this.loadPublications();
+      }
     },
   },
   beforeDestroy() {
     this.leavePublicationsRoom();
   },
   methods: {
+    async submitGeneralPassword() {
+      if (!this.general_password_allow_send) return;
+      this.general_password_error = "";
+      try {
+        await this.$api.submitGeneralPassword({
+          password: this.general_password_to_submit,
+          remember_on_this_device: true,
+        });
+        this.general_password_to_submit = "";
+      } catch (err) {
+        this.general_password_error =
+          err?.code === "submitted_general_password_is_wrong"
+            ? this.$t("submitted_password_is_wrong")
+            : err?.code || err?.message || String(err);
+      }
+    },
     isRoomJoined(room) {
       return Array.isArray(this.$api.rooms_joined)
         ? this.$api.rooms_joined.includes(room)
@@ -574,6 +642,61 @@ export default {
   text-transform: uppercase;
   text-align: left;
   color: color-mix(in srgb, var(--folders-fg) 85%, transparent);
+}
+
+._foldersPanel--gateText {
+  margin: 0;
+  max-width: 60ch;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--folders-fg) 85%, transparent);
+}
+
+._foldersPanel--gateForm {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing));
+  max-width: 28rem;
+
+  ::v-deep .u-label,
+  ::v-deep ._dLabel .u-label,
+  ::v-deep label {
+    color: color-mix(in srgb, var(--folders-fg) 80%, transparent);
+  }
+
+  ::v-deep input {
+    background: color-mix(in srgb, var(--folders-fg) 12%, transparent);
+    color: var(--folders-fg);
+    border-color: transparent;
+
+    &:focus {
+      background: color-mix(in srgb, var(--folders-fg) 18%, transparent);
+      border-color: var(--folders-fg);
+    }
+  }
+
+  ::v-deep .u-button.u-suffix {
+    color: var(--folders-fg);
+  }
+}
+
+._foldersPanel--gateCta {
+  background: var(--folders-fg);
+  color: var(--folders-accent);
+  font-weight: 600;
+  padding: calc(var(--spacing) / 2) calc(var(--spacing) * 1.25);
+
+  &:hover,
+  &:focus-visible {
+    &:not([disabled]) {
+      background: white;
+      color: var(--folders-accent);
+    }
+  }
+
+  &[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 }
 
 ._foldersPanel--grid {

@@ -24,6 +24,7 @@
           :current_folder_path="current_folder_path"
           :folders_path="folders_path"
           :is_overlay="!!current_folder_path"
+          :needs_general_password="needs_general_password"
           @close="closeFoldersSidebar"
           @selectFolder="selectFolder"
           @openNewFolder="openNewFolder"
@@ -55,9 +56,6 @@ export default {
   },
   async created() {
     this.$eventHub.$on("login.openModal", this.openLoginModal);
-    if (!this.connected_as) {
-      this.show_login_modal = true;
-    }
     await this.initializeCurrentFolderFromRoute();
   },
   mounted() {},
@@ -68,7 +66,20 @@ export default {
     }
   },
 
+  computed: {
+    needs_general_password() {
+      return (
+        this.$root.app_infos?.instance_meta?.has_general_password === true &&
+        !this.$api.general_password
+      );
+    },
+  },
   watch: {
+    async needs_general_password(needs_general_password) {
+      if (!needs_general_password && this.show_folders_sidebar) {
+        await this.ensureFoldersSidebarData();
+      }
+    },
     async "$route.params.folder_slug"(new_folder_slug) {
       if (!new_folder_slug) {
         this.current_folder_path = "";
@@ -154,7 +165,9 @@ export default {
         this.closeFoldersSidebar();
         return;
       }
-      await this.ensureFoldersSidebarData();
+      if (!this.needs_general_password) {
+        await this.ensureFoldersSidebarData();
+      }
       this.show_folders_sidebar = true;
     },
     closeFoldersSidebar() {

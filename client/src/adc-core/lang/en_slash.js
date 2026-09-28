@@ -9,6 +9,11 @@ export default {
   login: "Login",
   change_color: "Change color",
 
+  // Home gate
+  log_in_to_browse: "Log in to browse",
+  log_in_to_browse_expl:
+    "Postcards, booklets and documentation spaces are reserved for Slash members. Enter the access password to continue.",
+
   // DropMenu
   logged_in_as: "Logged in as:",
   file: "File",
