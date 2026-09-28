@@ -127,4 +127,16 @@ const router = new VueRouter({
   },
 });
 
+// Static routes render without FullUI (no auth init, no socket): entering the
+// full app from one must be a fresh page load so init runs from scratch.
+router.beforeEach((to, from, next) => {
+  const leaves_static =
+    from.matched.length > 0 && from.meta?.static === true;
+  if (leaves_static && to.meta?.static !== true) {
+    window.location.assign(to.fullPath);
+    return next(false);
+  }
+  next();
+});
+
 export default router;
