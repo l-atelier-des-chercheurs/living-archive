@@ -1,23 +1,19 @@
 <template>
   <div class="_foldersPanel" :class="{ 'is--overlay': is_overlay }">
     <div class="_foldersPanel--inner">
-      <header class="_foldersPanel--header">
+      <header v-if="!is_overlay" class="_foldersPanel--siteHeader">
+        <SiteBrand title_tag="h1" />
+      </header>
+      <header v-else class="_foldersPanel--header">
         <div class="_foldersPanel--brand">
           <SlashLogo class="_foldersPanel--logo" />
           <div>
             <h1 class="_foldersPanel--title">Living archive</h1>
-            <p class="_foldersPanel--subtitle">
-              {{
-                is_overlay
-                  ? "Pick a folder to open it"
-                  : "Publications and documentation spaces"
-              }}
-            </p>
+            <p class="_foldersPanel--subtitle">Pick a folder to open it</p>
           </div>
         </div>
         <div class="_foldersPanel--headerButtons">
           <button
-            v-if="is_overlay"
             type="button"
             class="u-button u-button_icon"
             title="Close"
@@ -27,6 +23,22 @@
           </button>
         </div>
       </header>
+
+      <section v-if="!is_overlay" class="_foldersPanel--intro">
+        <p class="_foldersPanel--introText">
+          Slash Transition explores the place and role of sound artists in
+          territories in transition. This living archive gathers the
+          documentation, recordings and publications produced by artists and
+          partners across Innsbruck, Lisbon, Nantes, Tbilisi and Tunis.
+        </p>
+        <a
+          class="_foldersPanel--introLink"
+          :href="site_info.platform_url"
+          target="_blank"
+          rel="noopener"
+          >About the Slash project →</a
+        >
+      </section>
 
       <!-- Publication section (home only) -->
       <section v-if="!is_overlay" class="_foldersPanel--section">
@@ -138,6 +150,8 @@
           </div>
         </div>
       </section>
+
+      <SiteFooter v-if="!is_overlay" />
     </div>
 
     <CreateFolder
@@ -208,6 +222,9 @@ import CreateFolder from "@/adc-core/modals/CreateFolder.vue";
 import AdminsAndContributorsField from "@/adc-core/fields/AdminsAndContributorsField.vue";
 import CoverField from "@/adc-core/fields/CoverField.vue";
 import SlashLogo from "@/components/nav/SlashLogo.vue";
+import SiteBrand from "@/components/nav/SiteBrand.vue";
+import SiteFooter from "@/components/slash/SiteFooter.vue";
+import site_info from "@/config/site_info.js";
 import {
   getRootPublicationsPath,
   buildPublicationCreateMeta,
@@ -220,6 +237,8 @@ export default {
     AdminsAndContributorsField,
     CoverField,
     SlashLogo,
+    SiteBrand,
+    SiteFooter,
   },
   props: {
     folders: {
@@ -249,6 +268,7 @@ export default {
       is_creating: false,
       publications: [],
       publications_path: "",
+      site_info,
     };
   },
   computed: {
@@ -440,6 +460,7 @@ export default {
 
 ._foldersPanel--inner {
   width: 100%;
+  min-height: 100%;
   max-width: none;
   margin: 0;
   padding: calc(var(--spacing) * 2);
@@ -472,11 +493,37 @@ export default {
   text-align: left;
 }
 
+._foldersPanel--siteHeader {
+  padding: calc(var(--spacing)) 0;
+}
+
 ._foldersPanel--logo {
   display: block;
   width: clamp(7.5rem, 18vw, 9.5rem);
   height: auto;
   color: var(--folders-fg);
+}
+
+._foldersPanel--intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--spacing) / 1.5);
+}
+
+._foldersPanel--introText {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--sl-font-size-medium);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--folders-fg) 90%, transparent);
+}
+
+._foldersPanel--introLink {
+  font-weight: 600;
+  color: var(--folders-fg);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 ._foldersPanel--title {

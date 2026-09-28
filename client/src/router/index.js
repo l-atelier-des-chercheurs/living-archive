@@ -68,9 +68,37 @@ const routes = [
     component: () => import("@/views/RootPublicationView.vue"),
   },
   {
-    path: "/:folder_slug",
+    path: "/legal",
+    name: "Legal",
+    meta: {
+      static: true,
+    },
+    component: () => import("@/views/LegalView.vue"),
+    props: { page: "legal" },
+  },
+  {
+    path: "/privacy",
+    name: "Privacy",
+    meta: {
+      static: true,
+    },
+    component: () => import("@/views/LegalView.vue"),
+    props: { page: "privacy" },
+  },
+  {
+    path: "/f/:folder_slug",
     name: "Folder",
     component: () => import("@/views/SlashHomeView.vue"),
+  },
+  {
+    // keeps old /:folder_slug links (shared URLs, QR codes, prints) working
+    path: "/:folder_slug",
+    redirect: (to) => ({
+      name: "Folder",
+      params: { folder_slug: to.params.folder_slug },
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "*",
