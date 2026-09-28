@@ -49,11 +49,17 @@
             class="_foldersPanel--card is--create"
             @click="startCreatePublication('postcard')"
           >
-            <span class="_foldersPanel--cardTitle is--flag"
+            <span class="_foldersPanel--cardTitle is--flag is--small"
               >Create a postcard</span
             >
-            <div class="_foldersPanel--cardIcon is--create">
-              <b-icon icon="plus-lg" />
+            <div class="_foldersPanel--pcSchema" aria-hidden="true">
+              <span class="_foldersPanel--pcImage">
+                <b-icon icon="plus-lg" />
+              </span>
+              <span class="_foldersPanel--pcBack">
+                <span class="_foldersPanel--pcStamp" />
+                <span v-for="n in 3" :key="n" class="_foldersPanel--pcLine" />
+              </span>
             </div>
           </button>
           <button
@@ -677,6 +683,52 @@ export default {
     font-weight: 700;
     line-height: 1.25;
   }
+
+  &.is--small {
+    font-size: var(--sl-font-size-normal);
+  }
+}
+
+._foldersPanel--pcSchema {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 13rem;
+  aspect-ratio: 148 / 105;
+  margin-top: auto;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+._foldersPanel--pcImage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 2px dashed currentColor;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 1.5rem;
+}
+
+._foldersPanel--pcBack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.6rem 0.6rem 0.8rem;
+}
+
+._foldersPanel--pcStamp {
+  align-self: flex-end;
+  width: 30%;
+  aspect-ratio: 1;
+  margin-bottom: auto;
+  border: 1.5px dashed currentColor;
+}
+
+._foldersPanel--pcLine {
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.6;
 }
 
 ._foldersPanel--card.is--create ._foldersPanel--cardTitle.is--flag ~ ._foldersPanel--cardIcon {

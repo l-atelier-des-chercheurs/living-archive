@@ -384,34 +384,23 @@
         <p v-if="!is_share_view" class="_postcard--mark">Slash/</p>
 
         <div v-if="!is_share_view" class="_postcard--actions">
-          <button
-            type="button"
-            class="_postcard--primary"
+          <PostcardShareMenu
+            class="_postcard--shareMenu"
+            trigger_class="_postcard--primary"
+            :title="publication_title"
+            :share_url="share_url"
+            :share_file="share_file"
+            :is_preparing="is_preparing_share"
+            :is_busy="is_exporting"
             :disabled="!can_export || is_exporting"
-            @click="exportPrint(1)"
-          >
-            <b-icon
-              :icon="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
-              :class="{ _spinner: exporting_print === 1 }"
-            />
-            {{ $t("print_1") }}
-          </button>
-          <button
-            type="button"
-            class="_postcard--secondary"
-            :disabled="!can_export || is_exporting"
-            @click="exportPrint(4)"
-          >
-            <b-icon
-              :icon="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
-              :class="{ _spinner: exporting_print === 4 }"
-            />
-            {{ $t("print_4") }}
-          </button>
+            @open="prepareShareFile"
+            @downloadImage="exportPrint(1)"
+            @downloadSheet="exportPrint(4)"
+          />
         </div>
 
         <div
-          v-if="!is_share_view && export_error"
+          v-if="export_error"
           class="_postcard--alert is--danger"
           role="alert"
         >
@@ -447,34 +436,19 @@
         <b-icon icon="arrow-left" />
         {{ $t("back") }}
       </button>
-      <button
-        v-if="can_edit"
-        type="button"
-        class="_postcard--editBtn"
-        :disabled="is_exporting || !can_export"
-        :title="$t('print_1_hint')"
-        @click="exportPrint(1)"
-      >
-        <b-icon
-          :icon="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
-          :class="{ _spinner: exporting_print === 1 }"
-        />
-        {{ $t("print_1") }}
-      </button>
-      <button
-        v-if="can_edit"
-        type="button"
-        class="_postcard--editBtn"
-        :disabled="is_exporting || !can_export"
-        :title="$t('print_4_hint')"
-        @click="exportPrint(4)"
-      >
-        <b-icon
-          :icon="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
-          :class="{ _spinner: exporting_print === 4 }"
-        />
-        {{ $t("print_4") }}
-      </button>
+      <PostcardShareMenu
+        v-if="!is_loading && !load_error"
+        trigger_class="_postcard--editBtn"
+        :title="publication_title"
+        :share_url="share_url"
+        :share_file="share_file"
+        :is_preparing="is_preparing_share"
+        :is_busy="is_exporting"
+        :disabled="!can_export || is_exporting"
+        @open="prepareShareFile"
+        @downloadImage="exportPrint(1)"
+        @downloadSheet="exportPrint(4)"
+      />
       <button
         v-if="can_edit"
         type="button"
@@ -525,6 +499,7 @@ import QRCodeStyling from "qr-code-styling";
 import SlashLogo from "@/components/nav/SlashLogo.vue";
 import SiteBrand from "@/components/nav/SiteBrand.vue";
 import PickMediaFromFolder from "@/components/slash/PickMediaFromFolder.vue";
+import PostcardShareMenu from "@/components/slash/PostcardShareMenu.vue";
 import {
   getRootPublicationsPath,
   getRootPublicationPath,
@@ -569,6 +544,7 @@ export default {
     SlashLogo,
     SiteBrand,
     PickMediaFromFolder,
+    PostcardShareMenu,
   },
   data() {
     return {
@@ -591,7 +567,8 @@ export default {
       qr_simple_url: "",
       qr_play_url: "",
       is_exporting: false,
-      exporting_print: 0,
+      share_file: null,
+      is_preparing_share: false,
       is_generating: false,
       is_audio_playing: false,
       form_error: "",
@@ -1257,6 +1234,7 @@ export default {
       this.stopStampAudio();
       this.step = "form";
       this.export_error = "";
+      this.share_file = null;
       this.$nextTick(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
@@ -1620,22 +1598,42 @@ export default {
         new_cover_data: file,
       });
     },
+    async renderExportCardCanvas() {
+      if (this.has_audio && !this.active_qr_url) {
+        await this.buildQrVariants();
+      }
+      return this.renderPostcardCanvas({
+        width: EXPORT_WIDTH,
+        height: EXPORT_HEIGHT,
+      });
+    },
+    async prepareShareFile() {
+      if (!this.can_export || this.is_preparing_share) return;
+      this.is_preparing_share = true;
+      this.export_error = "";
+      try {
+        const card_canvas = await this.renderExportCardCanvas();
+        const slug = this.publication_slug || "carte";
+        this.share_file = await this.canvasToPngFile(
+          card_canvas,
+          `carte-postale-${slug}-a6.png`
+        );
+      } catch (err) {
+        console.error(err);
+        this.export_error = "Export failed. Try again with another image.";
+      } finally {
+        this.is_preparing_share = false;
+      }
+    },
     async exportPrint(copies) {
       const print_copies = copies === 4 ? 4 : 1;
       if (!this.can_export || this.is_exporting) return;
 
       this.is_exporting = true;
-      this.exporting_print = print_copies;
       this.export_error = "";
 
       try {
-        if (this.has_audio && !this.active_qr_url) {
-          await this.buildQrVariants();
-        }
-        const card_canvas = await this.renderPostcardCanvas({
-          width: EXPORT_WIDTH,
-          height: EXPORT_HEIGHT,
-        });
+        const card_canvas = await this.renderExportCardCanvas();
         const slug = this.publication_slug || "carte";
         let download_canvas = card_canvas;
         let filename = `carte-postale-${slug}-a6.png`;
@@ -1655,7 +1653,6 @@ export default {
         this.export_error = "Export failed. Try again with another image.";
       } finally {
         this.is_exporting = false;
-        this.exporting_print = 0;
       }
     },
     composePrintSheet4(card_canvas) {
@@ -2318,6 +2315,14 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+._postcard--shareMenu {
+  width: 100%;
+
+  > ._postcard--primary {
+    flex: 1;
+  }
 }
 
 ._postcard--dangerZone {

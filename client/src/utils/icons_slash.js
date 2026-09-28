@@ -6,11 +6,13 @@ import Vue from "vue";
 import {
   BIconArrowLeft,
   BIconBox,
+  BIconBoxArrowUp,
   BIconCalendarDay,
   BIconCameraVideo,
   BIconCardImage,
   BIconChatLeftText,
   BIconChatLeftTextFill,
+  BIconCheck2,
   BIconChevronDown,
   BIconCursor,
   BIconExclamationOctagon,
@@ -29,11 +31,13 @@ import {
 
 Vue.component("BIconArrowLeft", BIconArrowLeft);
 Vue.component("BIconBox", BIconBox);
+Vue.component("BIconBoxArrowUp", BIconBoxArrowUp);
 Vue.component("BIconCalendarDay", BIconCalendarDay);
 Vue.component("BIconCameraVideo", BIconCameraVideo);
 Vue.component("BIconCardImage", BIconCardImage);
 Vue.component("BIconChatLeftText", BIconChatLeftText);
 Vue.component("BIconChatLeftTextFill", BIconChatLeftTextFill);
+Vue.component("BIconCheck2", BIconCheck2);
 Vue.component("BIconChevronDown", BIconChevronDown);
 Vue.component("BIconCursor", BIconCursor);
 Vue.component("BIconExclamationOctagon", BIconExclamationOctagon);
