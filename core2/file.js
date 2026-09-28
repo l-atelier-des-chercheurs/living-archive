@@ -643,6 +643,8 @@ module.exports = (function () {
         case ".png":
         case ".gif":
         case ".svg":
+        case ".webp":
+        case ".avif":
           new_meta.$type = "image";
           break;
         case ".mp4":

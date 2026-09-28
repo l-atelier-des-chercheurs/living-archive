@@ -839,6 +839,13 @@ export default {
       if (/\.(mp3|wav|ogg|m4a|aac|flac|webm)$/.test(name)) return "audio";
       return "";
     },
+    mediaKindOf(file) {
+      if (file?.$type === "image" || file?.$type === "audio") return file.$type;
+      // .webp/.avif uploaded before the server knew them are typed "other"
+      if (!file?.$type || file.$type === "other")
+        return this.guessMediaKindFromFilename(file?.$media_filename);
+      return "";
+    },
     async bootstrapDraft() {
       this.is_loading = true;
       this.load_error = "";
@@ -933,9 +940,10 @@ export default {
           if (!path) continue;
           const from_files = files_by_path[path];
           if (from_files) {
-            if (from_files.$type === "image" && !this.image_media_path) {
+            const from_files_kind = this.mediaKindOf(from_files);
+            if (from_files_kind === "image" && !this.image_media_path) {
               this.applyLoadedMedia("image", from_files);
-            } else if (from_files.$type === "audio" && !this.audio_media_path) {
+            } else if (from_files_kind === "audio" && !this.audio_media_path) {
               this.applyLoadedMedia("audio", from_files);
             }
             continue;
@@ -962,9 +970,10 @@ export default {
 
       // Legacy fallback: no source_medias — first image/audio in folder.
       for (const file of files) {
-        if (file?.$type === "image" && !this.image_media_path) {
+        const kind = this.mediaKindOf(file);
+        if (kind === "image" && !this.image_media_path) {
           this.applyLoadedMedia("image", file);
-        } else if (file?.$type === "audio" && !this.audio_media_path) {
+        } else if (kind === "audio" && !this.audio_media_path) {
           this.applyLoadedMedia("audio", file);
         }
       }
@@ -977,9 +986,10 @@ export default {
       for (const path of paths) {
         try {
           const file = await this.$api.getFolder({ path });
-          if (file?.$type === "image" && !this.image_media_path) {
+          const kind = this.mediaKindOf(file);
+          if (kind === "image" && !this.image_media_path) {
             this.applyLoadedMedia("image", file);
-          } else if (file?.$type === "audio" && !this.audio_media_path) {
+          } else if (kind === "audio" && !this.audio_media_path) {
             this.applyLoadedMedia("audio", file);
           }
         } catch (err) {
