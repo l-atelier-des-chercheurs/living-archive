@@ -1757,6 +1757,8 @@ export default {
     );
   color: var(--pc-ink);
   font-family: var(--pc-font);
+  max-width: 100vw;
+  overflow-x: clip;
 }
 
 ._postcard *,
@@ -1775,7 +1777,7 @@ export default {
 }
 
 ._postcard.is--composeWide ._postcard--header {
-  max-width: min(100%, 64rem);
+  max-width: min(100%, 104rem);
 }
 
 ._postcard--brand {
@@ -1821,7 +1823,7 @@ export default {
 }
 
 ._postcard--shell.is--compose {
-  max-width: min(100%, 64rem);
+  max-width: min(100%, 104rem);
 }
 
 ._postcard--compose {
@@ -2007,8 +2009,9 @@ export default {
 }
 
 ._postcard--shell.is--share {
-  width: min(100%, 52rem);
-  max-width: min(100%, 52rem);
+  --pc-card-reserved-height: 18rem;
+  width: min(100%, 64rem);
+  max-width: min(100%, 64rem);
   margin: auto;
   flex: 1;
   display: flex;
@@ -2257,8 +2260,20 @@ export default {
 
 ._postcard--card {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  container-type: inline-size;
   width: 100%;
+  /* fit the screen height too, so the whole card stays visible */
+  max-width: min(
+    100%,
+    max(
+      18rem,
+      calc(
+        (100dvh - var(--pc-card-reserved-height, 10rem)) * 148 / 105
+      )
+    )
+  );
+  margin-inline: auto;
   background: var(--pc-paper);
   border: 2px solid var(--c-slash-blue);
   box-shadow: 0 14px 36px
@@ -2376,6 +2391,7 @@ export default {
   white-space: nowrap;
   text-overflow: clip;
   font-size: clamp(0.5rem, 2.4vw, 0.72rem);
+  font-size: max(0.5rem, 2.25cqi);
   line-height: 1.2;
   padding-bottom: 0.12em;
   color: var(--pc-ink);
@@ -2391,12 +2407,17 @@ export default {
 }
 
 @media (min-width: 640px) {
-  ._postcard--shell:not(.is--compose) {
-    max-width: 32rem;
+  ._postcard--shell:not(.is--compose):not(.is--share) {
+    --pc-card-reserved-height: 16rem;
+    max-width: min(100%, 64rem);
   }
 
   ._postcard:not(.is--composeWide) ._postcard--header {
     max-width: 32rem;
+  }
+
+  ._postcard:not(.is--compose):not(.is--share) ._postcard--header {
+    max-width: min(100%, 64rem);
   }
 
   ._postcard--actions {
