@@ -231,6 +231,8 @@ export default {
   --sl-font-mono: "Fira Mono";
 
   --sl-font-size-normal: 1rem;
+  --sl-font-size-medium: 1rem;
+  --sl-color-neutral-600: #52525b;
 
   --sl-font-size-large: 1.5rem;
   --sl-font-size-x-large: 1.66rem;

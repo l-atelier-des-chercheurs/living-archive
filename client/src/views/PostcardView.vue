@@ -37,10 +37,10 @@
       }"
     >
       <div v-if="is_loading" class="_postcard--status">Loading…</div>
-      <sl-alert v-else-if="load_error" variant="danger" open>
-        <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
-        {{ load_error }}
-      </sl-alert>
+      <div v-else-if="load_error" class="_postcard--alert is--danger" role="alert">
+        <b-icon icon="exclamation-octagon" />
+        <span>{{ load_error }}</span>
+      </div>
 
       <!-- Step 1: form + live preview -->
       <div
@@ -67,26 +67,25 @@
                 accept="image/*"
                 @change="onImageChange"
               />
-              <sl-button
+              <button
                 class="_postcard--pick"
-                size="small"
                 type="button"
-                :loading="is_uploading_image ? true : null"
                 :disabled="
                   is_generating ||
                   (!is_draft_mode && !publication) ||
                   is_uploading_image
-                    ? true
-                    : null
                 "
                 :title="image_file_name || 'Choose an image'"
                 @click="openImagePicker"
               >
-                <sl-icon slot="prefix" name="image"></sl-icon>
+                <b-icon
+                  :icon="is_uploading_image ? 'arrow-repeat' : 'image'"
+                  :class="{ _spinner: is_uploading_image }"
+                />
                 <span class="_postcard--pickLabel">{{
                   image_file_name || "Choose an image"
                 }}</span>
-              </sl-button>
+              </button>
               <button
                 type="button"
                 class="_postcard--fromFolder"
@@ -110,26 +109,25 @@
                 accept="audio/*"
                 @change="onAudioChange"
               />
-              <sl-button
+              <button
                 class="_postcard--pick"
-                size="small"
                 type="button"
-                :loading="is_uploading_audio ? true : null"
                 :disabled="
                   is_generating ||
                   (!is_draft_mode && !publication) ||
                   is_uploading_audio
-                    ? true
-                    : null
                 "
                 :title="audio_file_name || 'Choose an audio file'"
                 @click="openAudioPicker"
               >
-                <sl-icon slot="prefix" name="soundwave"></sl-icon>
+                <b-icon
+                  :icon="is_uploading_audio ? 'arrow-repeat' : 'soundwave'"
+                  :class="{ _spinner: is_uploading_audio }"
+                />
                 <span class="_postcard--pickLabel">{{
                   audio_file_name || "Choose an audio file"
                 }}</span>
-              </sl-button>
+              </button>
               <audio
                 v-if="audio_url"
                 class="_postcard--audio"
@@ -158,22 +156,25 @@
                   >{{ postcard_text.length }} / {{ text_max_length }}</span
                 >
               </span>
-              <sl-textarea
+              <textarea
                 class="_postcard--textarea"
                 :value="postcard_text"
                 :maxlength="text_max_length"
                 :rows="text_line_count"
-                resize="vertical"
-                :disabled="is_generating ? true : null"
+                :disabled="is_generating"
                 placeholder="From the studio window, evening light. Scan the stamp to hear today’s sketch. — L."
-                @sl-input="onSlTextInput"
-              ></sl-textarea>
+                @input="onTextInput"
+              ></textarea>
             </div>
 
-            <sl-alert v-if="form_error" variant="warning" open>
-              <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
-              {{ form_error }}
-            </sl-alert>
+            <div
+              v-if="form_error"
+              class="_postcard--alert is--warning"
+              role="alert"
+            >
+              <b-icon icon="exclamation-triangle" />
+              <span>{{ form_error }}</span>
+            </div>
 
             <div
               v-if="show_cancel_or_remove"
@@ -186,7 +187,7 @@
                 :disabled="is_generating"
                 @click="goHome"
               >
-                <sl-icon name="x-lg"></sl-icon>
+                <b-icon icon="x-lg" />
                 {{ $t("cancel") }}
               </button>
               <button
@@ -195,7 +196,7 @@
                 class="_postcard--deleteBtn"
                 @click="show_remove_menu = true"
               >
-                <sl-icon name="trash"></sl-icon>
+                <b-icon icon="trash" />
                 {{ $t("remove") }}
               </button>
             </div>
@@ -208,29 +209,26 @@
               class="_postcard--previewBtn"
               @click="openPreview"
             >
-              <sl-icon name="eye"></sl-icon>
+              <b-icon icon="eye" />
               {{ $t("preview") }}
             </button>
-            <sl-button
+            <button
               class="_postcard--primary"
-              variant="primary"
               type="submit"
-              :loading="is_saving && !is_generating ? true : null"
-              :disabled="
-                can_generate && !is_saving && !is_generating ? null : true
-              "
+              :disabled="!can_generate || is_saving || is_generating"
             >
-              <sl-icon
-                v-if="!is_generating"
-                slot="prefix"
-                name="postcard"
-              ></sl-icon>
+              <b-icon
+                v-if="is_saving && !is_generating"
+                icon="arrow-repeat"
+                class="_spinner"
+              />
+              <b-icon v-else-if="!is_generating" icon="card-image" />
               {{
                 is_generating
                   ? `${generation_progress}% — ${generation_status}`
                   : "Generate card"
               }}
-            </sl-button>
+            </button>
             <div
               v-if="is_generating"
               class="_postcard--progress"
@@ -261,7 +259,7 @@
               :title="$t('close')"
               @click="closePreview"
             >
-              <sl-icon name="x-lg"></sl-icon>
+              <b-icon icon="x-lg" />
               {{ $t("close") }}
             </button>
           </div>
@@ -386,31 +384,40 @@
         <p v-if="!is_share_view" class="_postcard--mark">Slash/</p>
 
         <div v-if="!is_share_view" class="_postcard--actions">
-          <sl-button
+          <button
+            type="button"
             class="_postcard--primary"
-            variant="primary"
-            :disabled="can_export && !is_exporting ? null : true"
-            :loading="exporting_print === 1 ? true : null"
+            :disabled="!can_export || is_exporting"
             @click="exportPrint(1)"
           >
-            <sl-icon slot="prefix" name="printer"></sl-icon>
+            <b-icon
+              :icon="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
+              :class="{ _spinner: exporting_print === 1 }"
+            />
             {{ $t("print_1") }}
-          </sl-button>
-          <sl-button
+          </button>
+          <button
+            type="button"
             class="_postcard--secondary"
-            :disabled="can_export && !is_exporting ? null : true"
-            :loading="exporting_print === 4 ? true : null"
+            :disabled="!can_export || is_exporting"
             @click="exportPrint(4)"
           >
-            <sl-icon slot="prefix" name="printer"></sl-icon>
+            <b-icon
+              :icon="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
+              :class="{ _spinner: exporting_print === 4 }"
+            />
             {{ $t("print_4") }}
-          </sl-button>
+          </button>
         </div>
 
-        <sl-alert v-if="!is_share_view && export_error" variant="danger" open>
-          <sl-icon slot="icon" name="exclamation-octagon"></sl-icon>
-          {{ export_error }}
-        </sl-alert>
+        <div
+          v-if="!is_share_view && export_error"
+          class="_postcard--alert is--danger"
+          role="alert"
+        >
+          <b-icon icon="exclamation-octagon" />
+          <span>{{ export_error }}</span>
+        </div>
       </div>
 
       <div
@@ -429,7 +436,7 @@
           class="_postcard--deleteBtn"
           @click="show_remove_menu = true"
         >
-          <sl-icon name="trash"></sl-icon>
+          <b-icon icon="trash" />
           {{ $t("remove") }}
         </button>
       </div>
@@ -437,7 +444,7 @@
 
     <div v-if="is_share_view" class="_postcard--shareActions">
       <button type="button" class="_postcard--editBtn" @click="goHome">
-        <sl-icon name="arrow-left"></sl-icon>
+        <b-icon icon="arrow-left" />
         {{ $t("back") }}
       </button>
       <button
@@ -448,10 +455,10 @@
         :title="$t('print_1_hint')"
         @click="exportPrint(1)"
       >
-        <sl-icon
-          :name="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
+        <b-icon
+          :icon="exporting_print === 1 ? 'arrow-repeat' : 'printer'"
           :class="{ _spinner: exporting_print === 1 }"
-        ></sl-icon>
+        />
         {{ $t("print_1") }}
       </button>
       <button
@@ -462,10 +469,10 @@
         :title="$t('print_4_hint')"
         @click="exportPrint(4)"
       >
-        <sl-icon
-          :name="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
+        <b-icon
+          :icon="exporting_print === 4 ? 'arrow-repeat' : 'printer'"
           :class="{ _spinner: exporting_print === 4 }"
-        ></sl-icon>
+        />
         {{ $t("print_4") }}
       </button>
       <button
@@ -474,7 +481,7 @@
         class="_postcard--editBtn"
         @click="goToEditor"
       >
-        <sl-icon name="pencil"></sl-icon>
+        <b-icon icon="pencil" />
         {{ $t("edit") }}
       </button>
     </div>
@@ -514,7 +521,6 @@
 </template>
 
 <script>
-import Vue from "vue";
 import QRCodeStyling from "qr-code-styling";
 import SlashLogo from "@/components/nav/SlashLogo.vue";
 import SiteBrand from "@/components/nav/SiteBrand.vue";
@@ -527,16 +533,6 @@ import {
   titleFromPostcardText,
   buildPublicationCreateMeta,
 } from "@/utils/folderPublications.js";
-
-const SHOELACE_VERSION = "2.20.1";
-const SHOELACE_CDN = `https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@${SHOELACE_VERSION}/cdn`;
-const SHOELACE_CSS_ID = "shoelace-postcard-css";
-const SHOELACE_JS_ID = "shoelace-postcard-js";
-
-const existing_ignored = Vue.config.ignoredElements || [];
-if (!existing_ignored.some((item) => item.toString() === "/^sl-/")) {
-  Vue.config.ignoredElements = [...existing_ignored, /^sl-/];
-}
 
 const QR_PLACEHOLDER_URL =
   "https://slash.local/postcard/audio-placeholder";
@@ -566,24 +562,6 @@ const TEXT_LINE_COUNT = 8;
 const CHARS_PER_LINE = 28;
 const TEXT_MAX_LENGTH = TEXT_LINE_COUNT * CHARS_PER_LINE;
 const PREVIEW_WIDE_MQ = "(min-width: 960px)";
-
-function loadShoelaceFromCdn() {
-  if (!document.getElementById(SHOELACE_CSS_ID)) {
-    const link = document.createElement("link");
-    link.id = SHOELACE_CSS_ID;
-    link.rel = "stylesheet";
-    link.href = `${SHOELACE_CDN}/themes/light.css`;
-    document.head.appendChild(link);
-  }
-
-  if (!document.getElementById(SHOELACE_JS_ID)) {
-    const script = document.createElement("script");
-    script.id = SHOELACE_JS_ID;
-    script.type = "module";
-    script.src = `${SHOELACE_CDN}/shoelace-autoloader.js`;
-    document.head.appendChild(script);
-  }
-}
 
 export default {
   name: "PostcardView",
@@ -723,7 +701,6 @@ export default {
     },
   },
   async created() {
-    loadShoelaceFromCdn();
     if (this.is_share_view) {
       this.prepareShareSession();
     }
@@ -1445,7 +1422,7 @@ export default {
         // form_error already set
       }
     },
-    onSlTextInput(event) {
+    onTextInput(event) {
       const value = event.target.value || "";
       this.postcard_text =
         value.length > this.text_max_length
@@ -1723,12 +1700,10 @@ export default {
   --pc-paper: var(--c-slash-mint);
   --pc-rule: rgba(73, 128, 200, 0.4);
   --pc-font: "Rubik", "Helvetica Neue", sans-serif;
-
-  --sl-color-primary-600: var(--c-slash-orange);
-  --sl-color-primary-500: #ff6f47;
-  --sl-color-primary-700: #d9441f;
-  --sl-font-sans: var(--pc-font);
-  --sl-border-radius-medium: 0.75rem;
+  --pc-radius: 0.75rem;
+  --pc-field-border: color-mix(in srgb, var(--c-slash-blue) 35%, white);
+  --pc-focus-ring: 0 0 0 3px
+    color-mix(in srgb, var(--c-slash-blue) 25%, transparent);
 
   box-sizing: border-box;
   min-height: 100vh;
@@ -1903,7 +1878,7 @@ export default {
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 
-  sl-icon {
+  .b-icon {
     font-size: 1.05rem;
   }
 }
@@ -2042,7 +2017,7 @@ export default {
   transition: transform 0.15s ease, border-color 0.15s ease,
     background-color 0.15s ease;
 
-  sl-icon {
+  .b-icon {
     font-size: 1rem;
   }
 }
@@ -2061,7 +2036,7 @@ export default {
   transform: none;
 }
 
-._postcard--editBtn ._spinner {
+._postcard ._spinner {
   animation: postcardSpin 0.8s linear infinite;
 }
 
@@ -2133,24 +2108,39 @@ export default {
 }
 
 ._postcard--pick {
-  --sl-color-neutral-0: var(--c-slash-mint);
-  --sl-color-neutral-1000: var(--c-slash-burgundy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   width: 100%;
   max-width: 100%;
+  min-height: 1.875rem;
+  padding: 0.25rem 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--pc-field-border);
+  border-radius: var(--pc-radius);
+  background: var(--c-slash-mint);
+  color: var(--c-slash-burgundy);
+  font-family: var(--pc-font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  .b-icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
 }
 
-._postcard--pick::part(base) {
-  max-width: 100%;
-  overflow: hidden;
-}
-
-._postcard--pick::part(label) {
-  min-width: 0;
-  overflow: hidden;
+._postcard--pick:hover:not(:disabled) {
+  border-color: var(--c-slash-blue);
+  background: color-mix(in srgb, var(--c-slash-mint) 70%, white);
 }
 
 ._postcard--pickLabel {
   display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2184,20 +2174,119 @@ export default {
 }
 
 ._postcard--textarea {
+  display: block;
   width: 100%;
-  --sl-input-font-family: var(--pc-font);
-  --sl-input-border-color: color-mix(in srgb, var(--c-slash-blue) 35%, white);
-  --sl-input-border-color-focus: var(--c-slash-blue);
-  --sl-input-focus-ring-color: color-mix(
-    in srgb,
-    var(--c-slash-blue) 25%,
-    transparent
-  );
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--pc-field-border);
+  border-radius: var(--pc-radius);
+  background: #fff;
+  color: var(--pc-ink);
+  font-family: var(--pc-font);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+._postcard--textarea:focus {
+  outline: none;
+  border-color: var(--c-slash-blue);
+  box-shadow: var(--pc-focus-ring);
+}
+
+._postcard--textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 ._postcard--primary,
 ._postcard--secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
+  min-height: 2.5rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--pc-radius);
+  font-family: var(--pc-font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  .b-icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+}
+
+._postcard--primary {
+  background: var(--c-slash-orange);
+  color: #fff;
+}
+
+._postcard--primary:hover:not(:disabled) {
+  background: #ff6f47;
+}
+
+._postcard--primary:active:not(:disabled) {
+  background: #d9441f;
+}
+
+._postcard--secondary {
+  background: #fff;
+  border-color: var(--pc-field-border);
+  color: var(--pc-ink);
+}
+
+._postcard--secondary:hover:not(:disabled) {
+  border-color: var(--c-slash-blue);
+  background: color-mix(in srgb, var(--c-slash-mint) 40%, white);
+}
+
+._postcard--pick:focus-visible,
+._postcard--primary:focus-visible,
+._postcard--secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--pc-focus-ring);
+}
+
+._postcard--pick:disabled,
+._postcard--primary:disabled,
+._postcard--secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+._postcard--alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--pc-alert-color) 30%, white);
+  border-top: 3px solid var(--pc-alert-color);
+  border-radius: var(--pc-radius);
+  background: #fff;
+  color: var(--pc-ink);
+  font-size: 0.875rem;
+  line-height: 1.4;
+
+  .b-icon {
+    flex-shrink: 0;
+    margin-top: 0.1em;
+    font-size: 1.15rem;
+    color: var(--pc-alert-color);
+  }
+}
+
+._postcard--alert.is--danger {
+  --pc-alert-color: var(--c-slash-burgundy);
+}
+
+._postcard--alert.is--warning {
+  --pc-alert-color: #d97706;
 }
 
 ._postcard--progress {
@@ -2245,7 +2334,7 @@ export default {
   transition: transform 0.15s ease, border-color 0.15s ease,
     background-color 0.15s ease;
 
-  sl-icon {
+  .b-icon {
     font-size: 1rem;
   }
 }
