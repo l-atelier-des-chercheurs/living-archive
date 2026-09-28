@@ -26,14 +26,7 @@
     </header>
 
     <header v-else class="_postcard--shareHeader">
-      <a
-        class="_postcard--shareBrand"
-        href="/"
-        aria-label="Slash"
-        @click.prevent="goHome"
-      >
-        <SlashLogo class="_postcard--shareLogo" />
-      </a>
+      <SiteBrand :link_home="true" />
     </header>
 
     <div
@@ -524,6 +517,7 @@
 import Vue from "vue";
 import QRCodeStyling from "qr-code-styling";
 import SlashLogo from "@/components/nav/SlashLogo.vue";
+import SiteBrand from "@/components/nav/SiteBrand.vue";
 import PickMediaFromFolder from "@/components/slash/PickMediaFromFolder.vue";
 import {
   getRootPublicationsPath,
@@ -595,6 +589,7 @@ export default {
   name: "PostcardView",
   components: {
     SlashLogo,
+    SiteBrand,
     PickMediaFromFolder,
   },
   data() {
@@ -1978,30 +1973,11 @@ export default {
 }
 
 ._postcard--shareHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: calc(var(--spacing));
+  --site-brand-color: var(--c-slash-burgundy);
   width: 100%;
   margin: 0 0 calc(var(--spacing) * 1.5);
+  padding: calc(var(--spacing)) 0;
   flex-shrink: 0;
-}
-
-._postcard--shareBrand {
-  display: block;
-  color: var(--c-slash-burgundy);
-  text-decoration: none;
-  flex: 0 0 auto;
-}
-
-._postcard--shareBrand:hover {
-  color: var(--c-slash-blue);
-}
-
-._postcard--shareLogo {
-  display: block;
-  width: clamp(7.5rem, 18vw, 9.5rem);
-  height: auto;
 }
 
 ._postcard--shareActions {

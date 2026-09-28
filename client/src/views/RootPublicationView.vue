@@ -77,7 +77,28 @@
           </li>
         </ul>
       </div>
+
+      <div v-if="can_edit && publication.$path" class="_rootPub--dangerZone">
+        <button
+          type="button"
+          class="_rootPub--deleteBtn"
+          @click="show_remove_menu = true"
+        >
+          <b-icon icon="trash" />
+          {{ $t("remove") }}
+        </button>
+      </div>
     </div>
+
+    <RemoveMenu2
+      v-if="show_remove_menu && publication?.$path"
+      :path="publication.$path"
+      :modal_title="$t('remove_publication', { name: publication_title })"
+      :modal_expl="$t('remove_publication_expl')"
+      :success_notification="$t('publication_was_removed')"
+      @close="show_remove_menu = false"
+      @removedSuccessfully="onPublicationRemoved"
+    />
   </div>
 </template>
 
@@ -104,6 +125,7 @@ export default {
       picker_files: [],
       files_cache: {},
       is_saving: false,
+      show_remove_menu: false,
     };
   },
   computed: {
@@ -126,7 +148,7 @@ export default {
     },
     can_edit() {
       if (!this.publication) return false;
-      return this.canEditFolder({ folder: this.publication });
+      return this.canLoggedinEditFolder({ folder: this.publication });
     },
     accessible_folders() {
       return (this.folders || []).filter((folder) =>
@@ -169,6 +191,10 @@ export default {
     },
     goHome() {
       this.$router.push({ name: "Accueil" });
+    },
+    onPublicationRemoved() {
+      this.show_remove_menu = false;
+      this.goHome();
     },
     getItemLabel(file) {
       const caption = (file.caption || "").replace(/<[^>]+>/g, "").trim();
@@ -362,6 +388,38 @@ export default {
     width: 2rem;
     height: 2rem;
     object-fit: cover;
+  }
+}
+
+._rootPub--dangerZone {
+  display: flex;
+  justify-content: center;
+  margin-top: calc(var(--spacing) * 1.5);
+  padding-top: var(--spacing);
+  border-top: 1px solid var(--c-gris);
+}
+
+._rootPub--deleteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--c-rouge) 40%, white);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-rouge);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    transform: translateY(-1px);
+    border-color: var(--c-rouge);
+    background: color-mix(in srgb, var(--c-rouge) 8%, white);
   }
 }
 </style>

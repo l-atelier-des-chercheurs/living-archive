@@ -10,18 +10,15 @@
         Living archive
       </component>
     </component>
-    <EuLogo class="_siteBrand--euLogo" variant="mono" />
   </div>
 </template>
 
 <script>
 import SlashLogo from "@/components/nav/SlashLogo.vue";
-import EuLogo from "@/components/nav/EuLogo.vue";
 
 export default {
   components: {
     SlashLogo,
-    EuLogo,
   },
   props: {
     link_home: {
@@ -42,7 +39,7 @@ export default {
   flex-flow: row wrap;
   align-items: flex-end;
   gap: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
-  color: var(--c-slash-mint, #e5ffdb);
+  color: var(--site-brand-color, var(--c-slash-mint, #e5ffdb));
 }
 
 ._siteBrand--names {
@@ -65,9 +62,5 @@ export default {
   letter-spacing: -0.03em;
   line-height: 0.95;
   color: inherit;
-}
-
-._siteBrand--euLogo {
-  font-size: clamp(0.75rem, 1.2vw, 1rem);
 }
 </style>
