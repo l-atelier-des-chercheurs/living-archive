@@ -6,7 +6,6 @@
       :pane_infos="pane_infos"
       :can_edit="can_edit"
       @updatePane="updatePane"
-      @close="goHome"
       @remove="show_remove_menu = true"
     />
     <template v-else>

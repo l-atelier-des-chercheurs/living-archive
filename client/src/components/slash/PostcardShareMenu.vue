@@ -33,7 +33,7 @@
         </div>
         <div class="_pcShare--headText">
           <strong class="_pcShare--title">{{ title }}</strong>
-          <span class="_pcShare--subtitle">
+          <span v-if="show_file_actions" class="_pcShare--subtitle">
             <template v-if="is_preparing">{{ $t("share_preparing") }}</template>
             <template v-else>
               {{ $t("share_png_image") }}
@@ -43,9 +43,10 @@
         </div>
       </div>
 
-      <hr class="_pcShare--sep" />
+      <hr v-if="show_file_actions" class="_pcShare--sep" />
 
       <button
+        v-if="show_file_actions"
         type="button"
         class="_pcShare--item"
         role="menuitem"
@@ -55,6 +56,7 @@
         <span class="_pcShare--label">{{ $t("download_as_image") }}</span>
       </button>
       <button
+        v-if="show_file_actions"
         type="button"
         class="_pcShare--item"
         role="menuitem"
@@ -64,7 +66,7 @@
         <span class="_pcShare--label">{{ $t("download_4_on_a4") }}</span>
       </button>
 
-      <hr class="_pcShare--sep" />
+      <hr v-if="show_file_actions" class="_pcShare--sep" />
 
       <template v-if="!show_manual_send">
         <button
@@ -139,6 +141,7 @@ export default {
     is_busy: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     trigger_class: { type: [String, Array, Object], default: "" },
+    show_file_actions: { type: Boolean, default: true },
   },
   data() {
     return {

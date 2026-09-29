@@ -48,6 +48,14 @@ export function getPublicationPath(folder_path, publication_slug) {
   return `${getFolderPublicationsPath(folder_path)}/${publication_slug}`;
 }
 
+/** Newest first, private publications left out. Postcards and booklets together. */
+export function browsePublicationSlugs(publications) {
+  return (publications || [])
+    .filter((pub) => pub?.$path && pub.$status !== "private")
+    .sort((a, b) => +new Date(b.$date_created) - +new Date(a.$date_created))
+    .map((pub) => pub.$path.split("/").pop());
+}
+
 /** Accepts a registry key or a stored publication `template` value. */
 export function getTemplateConfig(template_key) {
   if (!template_key) return null;

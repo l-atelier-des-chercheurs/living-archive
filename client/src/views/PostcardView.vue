@@ -18,7 +18,7 @@
         <p class="_postcard--lead">
           {{
             step === "form"
-              ? "One image, one sound, one text — then generate your card."
+              ? "Tap the photo, the stamp, or the lines."
               : "Here’s your card. Export, share, or edit it."
           }}
         </p>
@@ -42,175 +42,189 @@
         <span>{{ load_error }}</span>
       </div>
 
-      <!-- Step 1: form + live preview -->
+      <!-- Step 1: the card is the form -->
       <div
         v-else-if="!is_share_view && step === 'form'"
         class="_postcard--compose"
-        :class="{
-          'is--wide': is_wide_layout,
-          'is--previewOpen': preview_open,
-        }"
       >
-        <form
-          class="_postcard--form"
-          @submit.prevent="generateCard"
-        >
-          <div class="_postcard--formFields">
-            <p class="_postcard--step">Step 1 · Content</p>
+        <form class="_postcard--form" @submit.prevent="generateCard">
+          <input
+            ref="image_input"
+            class="_postcard--fileInput"
+            type="file"
+            accept="image/*"
+            @change="onImageChange"
+          />
+          <input
+            ref="audio_input"
+            class="_postcard--fileInput"
+            type="file"
+            accept="audio/*"
+            @change="onAudioChange"
+          />
 
-            <div class="_postcard--field">
-              <span class="_postcard--label">Image</span>
-              <input
-                ref="image_input"
-                class="_postcard--fileInput"
-                type="file"
-                accept="image/*"
-                @change="onImageChange"
+          <div
+            class="_postcard--card is--editable"
+            :style="card_preview_style"
+            aria-label="Postcard"
+          >
+            <button
+              type="button"
+              class="_postcard--imagePane is--hit"
+              :disabled="
+                is_generating ||
+                (!is_draft_mode && !publication) ||
+                is_uploading_image
+              "
+              :title="image_file_name || 'Add an image'"
+              @click="openImagePicker"
+            >
+              <img
+                v-if="image_url"
+                class="_postcard--image"
+                :src="image_url"
+                alt=""
               />
-              <button
-                class="_postcard--pick"
-                type="button"
-                :disabled="
-                  is_generating ||
-                  (!is_draft_mode && !publication) ||
-                  is_uploading_image
-                "
-                :title="image_file_name || 'Choose an image'"
-                @click="openImagePicker"
-              >
-                <b-icon
-                  :icon="is_uploading_image ? 'arrow-repeat' : 'image'"
-                  :class="{ _spinner: is_uploading_image }"
-                />
-                <span class="_postcard--pickLabel">{{
-                  image_file_name || "Choose an image"
-                }}</span>
-              </button>
-              <button
-                type="button"
-                class="_postcard--fromFolder"
-                :disabled="
-                  is_generating ||
-                  !accessible_folders.length ||
-                  is_uploading_image
-                "
-                @click="openFolderMediaModal('image')"
-              >
-                {{ $t("from_folder") }}
-              </button>
-            </div>
-
-            <div class="_postcard--field">
-              <span class="_postcard--label">Audio</span>
-              <input
-                ref="audio_input"
-                class="_postcard--fileInput"
-                type="file"
-                accept="audio/*"
-                @change="onAudioChange"
-              />
-              <button
-                class="_postcard--pick"
-                type="button"
-                :disabled="
-                  is_generating ||
-                  (!is_draft_mode && !publication) ||
-                  is_uploading_audio
-                "
-                :title="audio_file_name || 'Choose an audio file'"
-                @click="openAudioPicker"
-              >
-                <b-icon
-                  :icon="is_uploading_audio ? 'arrow-repeat' : 'soundwave'"
-                  :class="{ _spinner: is_uploading_audio }"
-                />
-                <span class="_postcard--pickLabel">{{
-                  audio_file_name || "Choose an audio file"
-                }}</span>
-              </button>
-              <audio
-                v-if="audio_url"
-                class="_postcard--audio"
-                :src="audio_url"
-                controls
-                preload="metadata"
-              />
-              <button
-                type="button"
-                class="_postcard--fromFolder"
-                :disabled="
-                  is_generating ||
-                  !accessible_folders.length ||
-                  is_uploading_audio
-                "
-                @click="openFolderMediaModal('audio')"
-              >
-                {{ $t("from_folder") }}
-              </button>
-            </div>
-
-            <div class="_postcard--field">
-              <span class="_postcard--label">
-                Text
-                <span class="_postcard--counter"
-                  >{{ postcard_text.length }} / {{ text_max_length }}</span
-                >
+              <span v-else class="_postcard--zoneHint">
+                <b-icon icon="image" />
+                Add an image
               </span>
-              <textarea
-                class="_postcard--textarea"
-                :value="postcard_text"
-                :maxlength="text_max_length"
-                :rows="text_line_count"
-                :disabled="is_generating"
-                placeholder="From the studio window, evening light. Scan the stamp to hear today’s sketch. — L."
-                @input="onTextInput"
-              ></textarea>
-            </div>
+              <span v-if="image_url && !is_uploading_image" class="_postcard--zoneHint is--overlay">
+                Change
+              </span>
+              <b-icon
+                v-if="is_uploading_image"
+                icon="arrow-repeat"
+                class="_spinner _postcard--zoneSpinner"
+              />
+            </button>
 
-            <div
-              v-if="form_error"
-              class="_postcard--alert is--warning"
-              role="alert"
-            >
-              <b-icon icon="exclamation-triangle" />
-              <span>{{ form_error }}</span>
-            </div>
+            <div class="_postcard--rightPane">
+              <div class="_postcard--stampRow">
+                <button
+                  v-if="!has_audio"
+                  type="button"
+                  class="_postcard--stamp is--empty"
+                  :disabled="
+                    is_generating ||
+                    (!is_draft_mode && !publication) ||
+                    is_uploading_audio
+                  "
+                  title="Add a sound"
+                  @click="openAudioPicker"
+                >
+                  <b-icon
+                    :icon="is_uploading_audio ? 'arrow-repeat' : 'soundwave'"
+                    :class="{ _spinner: is_uploading_audio }"
+                  />
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="_postcard--stamp"
+                  :class="{ 'is--playing': is_audio_playing }"
+                  :aria-label="is_audio_playing ? 'Stop audio' : 'Play audio'"
+                  @click="onStampClick"
+                >
+                  <span
+                    v-if="is_audio_playing"
+                    class="_postcard--stopBtn"
+                    aria-hidden="true"
+                  >
+                    <span class="_postcard--stopIcon"></span>
+                  </span>
+                  <img
+                    v-else-if="active_qr_url"
+                    class="_postcard--qr"
+                    :src="active_qr_url"
+                    alt=""
+                  />
+                </button>
+                <button
+                  v-if="has_audio"
+                  type="button"
+                  class="_postcard--zoneLink"
+                  :disabled="is_generating || is_uploading_audio"
+                  @click="openAudioPicker"
+                >
+                  Change
+                </button>
+              </div>
 
-            <div
-              v-if="show_cancel_or_remove"
-              class="_postcard--dangerZone is--inline"
-            >
-              <button
-                v-if="is_draft_mode"
-                type="button"
-                class="_postcard--deleteBtn"
-                :disabled="is_generating"
-                @click="goHome"
-              >
-                <b-icon icon="x-lg" />
-                {{ $t("cancel") }}
-              </button>
-              <button
-                v-else-if="can_edit && publication && publication.$path"
-                type="button"
-                class="_postcard--deleteBtn"
-                @click="show_remove_menu = true"
-              >
-                <b-icon icon="trash" />
-                {{ $t("remove") }}
-              </button>
+              <label class="_postcard--rules is--editable">
+                <textarea
+                  class="_postcard--cardText"
+                  :value="postcard_text"
+                  :maxlength="text_max_length"
+                  :rows="text_line_count"
+                  :disabled="is_generating"
+                  aria-label="Text"
+                  placeholder="Write on the card…"
+                  @input="onTextInput"
+                ></textarea>
+              </label>
             </div>
           </div>
 
-          <div class="_postcard--formFooter">
+          <div class="_postcard--zoneLinks">
             <button
-              v-if="!preview_open"
               type="button"
-              class="_postcard--previewBtn"
-              @click="openPreview"
+              class="_postcard--zoneLink"
+              :disabled="
+                is_generating || !accessible_folders.length || is_uploading_image
+              "
+              aria-label="Image from a folder"
+              @click="openFolderMediaModal('image')"
             >
-              <b-icon icon="eye" />
-              {{ $t("preview") }}
+              <b-icon icon="image" />
+              Image from a folder
+            </button>
+            <button
+              type="button"
+              class="_postcard--zoneLink"
+              :disabled="
+                is_generating || !accessible_folders.length || is_uploading_audio
+              "
+              aria-label="Sound from a folder"
+              @click="openFolderMediaModal('audio')"
+            >
+              <b-icon icon="soundwave" />
+              Sound from a folder
+            </button>
+            <span class="_postcard--counter">
+              {{ postcard_text.length }} / {{ text_max_length }}
+            </span>
+          </div>
+
+          <div
+            v-if="form_error"
+            class="_postcard--alert is--warning"
+            role="alert"
+          >
+            <b-icon icon="exclamation-triangle" />
+            <span>{{ form_error }}</span>
+          </div>
+
+          <div class="_postcard--formFooter">
+            <div class="_postcard--formActions">
+            <button
+              v-if="is_draft_mode"
+              type="button"
+              class="_postcard--deleteBtn"
+              :disabled="is_generating"
+              @click="goHome"
+            >
+              <b-icon icon="x-lg" />
+              {{ $t("cancel") }}
+            </button>
+            <button
+              v-else-if="can_edit && publication && publication.$path"
+              type="button"
+              class="_postcard--deleteBtn"
+              @click="show_remove_menu = true"
+            >
+              <b-icon icon="trash" />
+              {{ $t("remove") }}
             </button>
             <button
               class="_postcard--primary"
@@ -229,6 +243,7 @@
                   : "Generate card"
               }}
             </button>
+            </div>
             <div
               v-if="is_generating"
               class="_postcard--progress"
@@ -244,75 +259,6 @@
             </div>
           </div>
         </form>
-
-        <aside
-          v-if="preview_open"
-          class="_postcard--previewPane"
-          :class="{ 'is--overlay': !is_wide_layout }"
-          aria-label="Preview"
-        >
-          <div class="_postcard--previewToolbar">
-            <strong class="_postcard--previewLabel">{{ $t("preview") }}</strong>
-            <button
-              type="button"
-              class="_postcard--editBtn"
-              :title="$t('close')"
-              @click="closePreview"
-            >
-              <b-icon icon="x-lg" />
-              {{ $t("close") }}
-            </button>
-          </div>
-          <div
-            class="_postcard--card"
-            :style="card_preview_style"
-            aria-label="Postcard preview"
-          >
-            <div class="_postcard--imagePane">
-              <img
-                v-if="image_url"
-                class="_postcard--image"
-                :src="image_url"
-                alt=""
-              />
-              <div v-else class="_postcard--imagePlaceholder">Image</div>
-            </div>
-            <div class="_postcard--rightPane">
-              <button
-                v-if="has_audio"
-                type="button"
-                class="_postcard--stamp"
-                :class="{ 'is--playing': is_audio_playing }"
-                :aria-label="is_audio_playing ? 'Stop audio' : 'Play audio'"
-                @click="onStampClick"
-              >
-                <span
-                  v-if="is_audio_playing"
-                  class="_postcard--stopBtn"
-                  aria-hidden="true"
-                >
-                  <span class="_postcard--stopIcon"></span>
-                </span>
-                <img
-                  v-else-if="active_qr_url"
-                  class="_postcard--qr"
-                  :src="active_qr_url"
-                  alt=""
-                />
-              </button>
-              <div class="_postcard--rules">
-                <div
-                  v-for="(line, index) in preview_text_lines"
-                  :key="'preview-rule-' + index"
-                  class="_postcard--rule"
-                >
-                  <span class="_postcard--ruleText">{{ line }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p class="_postcard--mark">Slash/</p>
-        </aside>
       </div>
 
       <!-- Step 2 / share view: generated card -->
@@ -515,6 +461,7 @@ import {
   sourceMediasToPaths,
   titleFromPostcardText,
   buildPublicationCreateMeta,
+  browsePublicationSlugs,
 } from "@/utils/folderPublications.js";
 
 const QR_PLACEHOLDER_URL =
@@ -807,12 +754,7 @@ export default {
         const publications = await this.$api.getFolders({
           path: getRootPublicationsPath(),
         });
-        this.sibling_postcard_slugs = publications
-          .filter((pub) => pub.template === "postcard" && pub.$cover)
-          .sort(
-            (a, b) => +new Date(b.$date_created) - +new Date(a.$date_created)
-          )
-          .map((pub) => pub.$path.split("/").pop());
+        this.sibling_postcard_slugs = browsePublicationSlugs(publications);
       } catch (err) {
         this.sibling_postcard_slugs = [];
       }
@@ -1876,22 +1818,14 @@ export default {
   position: relative;
 }
 
-._postcard--compose.is--wide {
-  display: grid;
-  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
-  gap: 1.5rem 1.75rem;
-  align-items: start;
-}
-
 ._postcard--form {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.75rem;
   min-width: 0;
-  padding: 1rem;
-  background: color-mix(in srgb, var(--c-slash-mint) 65%, white);
-  border: 2px solid var(--c-slash-mint);
-  border-radius: 0.75rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
 ._postcard--formFields {
@@ -1904,29 +1838,21 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-  margin-top: 1rem;
-  padding-top: 0.25rem;
-  background: color-mix(in srgb, var(--c-slash-mint) 65%, white);
 }
 
-._postcard--compose.is--previewOpen:not(.is--wide) ._postcard--formFooter {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  margin: 0;
-  padding: 0.75rem clamp(1rem, 4vw, 2rem)
-    calc(0.75rem + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid color-mix(in srgb, var(--c-slash-blue) 18%, white);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
-  border-radius: 0;
-  background: #fff;
-}
+._postcard--formActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
-._postcard--compose.is--previewOpen:not(.is--wide) ._postcard--formFields {
-  visibility: hidden;
-  pointer-events: none;
+  ._postcard--deleteBtn {
+    flex: 0 0 auto;
+  }
+
+  ._postcard--primary {
+    flex: 1 1 auto;
+    width: auto;
+  }
 }
 
 ._postcard--previewBtn {
@@ -2457,6 +2383,154 @@ export default {
   overflow: hidden;
 }
 
+._postcard--imagePane.is--hit {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+._postcard--zoneHint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  color: var(--c-slash-mint);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+
+  .b-icon {
+    font-size: 1.75rem;
+  }
+
+  &.is--overlay {
+    inset: auto 0 0.55rem;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: -1;
+      width: 5.5rem;
+      height: 1.6rem;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.45);
+    }
+  }
+}
+
+._postcard--zoneSpinner {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+._postcard--stampRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+._postcard--stamp.is--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  color: var(--c-slash-burgundy);
+  font-size: 1.35rem;
+  box-shadow: none;
+}
+
+._postcard--zoneLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+._postcard--zoneLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--c-slash-blue);
+  font-family: var(--pc-font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+._postcard--rules.is--editable {
+  container-type: size;
+  position: relative;
+}
+
+._postcard--cardText {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  resize: none;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(12.5% - 1px),
+    var(--pc-rule) calc(12.5% - 1px),
+    var(--pc-rule) 12.5%
+  );
+  color: var(--pc-ink);
+  font-family: var(--pc-font);
+  font-size: max(0.55rem, 7cqh);
+  line-height: 12.5cqh;
+  caret-color: var(--c-slash-burgundy);
+
+  &::placeholder {
+    color: var(--pc-muted);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+  }
+}
+
 ._postcard--imagePane {
   position: relative;
   min-height: 0;
@@ -2580,6 +2654,26 @@ export default {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+@media (max-width: 639px) {
+  ._postcard.is--compose {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  ._postcard--formFooter {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    margin: 0;
+    padding: 0.75rem clamp(1rem, 4vw, 2rem)
+      calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid color-mix(in srgb, var(--c-slash-blue) 18%, white);
+    background: #fff;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+  }
 }
 
 @media (min-width: 640px) {

@@ -1,15 +1,11 @@
 <template>
   <div class="_rootEdition">
+    <header class="_rootEdition--siteHeader">
+      <SiteBrand :link_home="true" :compact="true" />
+    </header>
+
     <div class="_rootEdition--topbar">
       <div class="_rootEdition--titleRow">
-        <button
-          type="button"
-          class="u-button u-button_icon"
-          :title="$t('back')"
-          @click="$emit('close')"
-        >
-          <b-icon icon="arrow-left" :label="$t('back')" />
-        </button>
         <TitleField
           :field_name="'title'"
           :label="$t('title')"
@@ -98,6 +94,7 @@ import {
   getTemplateConfig,
   publicationSlugFromPath,
 } from "@/utils/folderPublications.js";
+import SiteBrand from "@/components/nav/SiteBrand.vue";
 
 export default {
   props: {
@@ -106,6 +103,7 @@ export default {
     can_edit: Boolean,
   },
   components: {
+    SiteBrand,
     EditionTemplate: () =>
       import("@/components/publications/templates/EditionTemplate.vue"),
     ExportPubliModal: () =>
@@ -145,6 +143,15 @@ export default {
   flex-flow: column nowrap;
   background: var(--body-bg, white);
   overflow: hidden;
+}
+
+._rootEdition--siteHeader {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: calc(var(--spacing) / 1.5) var(--spacing);
+  background: var(--c-slash-blue, var(--c-bleuvert));
+  color: var(--c-slash-mint, #e5ffdb);
 }
 
 ._rootEdition--topbar {

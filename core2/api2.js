@@ -1041,9 +1041,16 @@ module.exports = (function () {
       // 2. Get the folder
       let d = await folder.getFolder({ path_to_folder });
 
-      // 3. Check if folder is public or superadmin access
+      // 3. Check if folder is public or superadmin access.
+      // Publications use $status in the editor ("public" / "private").
+      // Older booklets never received $public, so status is the share switch.
       const { general_password } = await settings.get();
-      if (d.$public !== true && general_password) {
+      const is_private = d.$status === "private";
+      const is_publication = path_to_folder.startsWith("publications/");
+      const is_shareable =
+        !is_private &&
+        (d.$public === true || (is_publication && d.$status === "public"));
+      if (!is_shareable && general_password) {
         // only allow queries with superadmintoken
         if (!auth.checkSuperadminToken(req.query?.superadmintoken)) {
           const err = new Error("Folder is not public");

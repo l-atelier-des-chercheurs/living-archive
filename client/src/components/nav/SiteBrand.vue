@@ -1,5 +1,5 @@
 <template>
-  <div class="_siteBrand">
+  <div class="_siteBrand" :class="{ 'is--compact': compact }">
     <component
       :is="link_home ? 'router-link' : 'div'"
       v-bind="link_home ? { to: { name: 'Accueil' }, title: 'Back to home' } : {}"
@@ -28,6 +28,10 @@ export default {
     title_tag: {
       type: String,
       default: "div",
+    },
+    compact: {
+      type: Boolean,
+      default: false,
     },
   },
 };
@@ -62,5 +66,24 @@ export default {
   letter-spacing: -0.03em;
   line-height: 0.95;
   color: inherit;
+}
+
+._siteBrand.is--compact {
+  ._siteBrand--names {
+    flex-direction: row;
+    align-items: center;
+    gap: calc(var(--spacing) / 2);
+  }
+
+  ._siteBrand--slashLogo {
+    width: 3.5rem;
+  }
+
+  ._siteBrand--title {
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+  }
 }
 </style>

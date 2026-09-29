@@ -413,7 +413,7 @@ export default {
     openPublication(pub) {
       if (!pub?.$path) return;
       const slug = pub.$path.split("/").pop();
-      if (pub.template === "postcard") {
+      if (pub.template === "postcard" || pub.template === "edition") {
         this.$router.push({
           name: "PublicPublication",
           params: { publication_slug: slug },
