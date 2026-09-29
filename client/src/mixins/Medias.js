@@ -18,6 +18,7 @@ export default {
       } catch (err) {
         return false;
       }
+      if (!thumb_path) return false;
       if ($path === "" || window.app_infos.page_is_standalone_html)
         return `./thumbs/${thumb_path}`;
       return `./thumbs/${$path}/${thumb_path}`;

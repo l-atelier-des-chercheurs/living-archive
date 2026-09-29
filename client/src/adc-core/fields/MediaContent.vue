@@ -318,7 +318,7 @@ export default {
         this.file.$media_filename.endsWith(".gif")
       )
         return this.file_full_path;
-      if (this.resolution) return this.thumb;
+      if (this.resolution && this.thumb) return this.thumb;
       return this.file_full_path;
     },
     file_full_path() {
