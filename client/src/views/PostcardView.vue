@@ -319,17 +319,6 @@
       <div v-else class="_postcard--result">
         <p v-if="!is_share_view" class="_postcard--step">Step 2 · Your card</p>
 
-        <div v-if="!is_share_view" class="_postcard--shareBar">
-          <button
-            type="button"
-            class="_postcard--editBtn"
-            @click="goBackToForm"
-          >
-            <b-icon icon="pencil" />
-            {{ $t("edit") }}
-          </button>
-        </div>
-
         <div
           class="_postcard--card"
           :style="card_preview_style"
@@ -446,13 +435,13 @@
         @downloadSheet="exportPrint(4)"
       />
       <button
-        v-if="can_edit"
+        v-if="can_edit && publication && publication.$path"
         type="button"
         class="_postcard--editBtn"
-        @click="goToEditor"
+        @click="show_remove_menu = true"
       >
-        <b-icon icon="pencil" />
-        {{ $t("edit") }}
+        <b-icon icon="trash" />
+        {{ $t("remove") }}
       </button>
     </div>
 
@@ -752,6 +741,9 @@ export default {
       // Public CP URLs must work without general password / FullUI init.
       this.$root.is_loading = false;
       try {
+        // needed for the author to delete the card (API is password-gated)
+        this.$api.general_password =
+          localStorage.getItem("general_password") || "";
         const raw = localStorage.getItem("tokenpath");
         if (!raw) return;
         const { token, token_path } = JSON.parse(raw);
@@ -863,6 +855,14 @@ export default {
           this.publication = await this.$api.getFolder({
             path: this.publication_path,
           });
+          // a generated card (with cover) is frozen: only the share view remains
+          if (this.publication?.$cover) {
+            await this.$router.replace({
+              name: "PostcardShare",
+              params: { publication_slug: this.publication_slug },
+            });
+            return;
+          }
           if (!this.isRoomJoined(this.publication_path)) {
             this.$api.join({ room: this.publication_path });
           }
@@ -1226,15 +1226,6 @@ export default {
       });
       this.setGenerationProgress(100, this.$t("postcard_progress_done"));
     },
-    goBackToForm() {
-      this.stopStampAudio();
-      this.step = "form";
-      this.export_error = "";
-      this.share_file = null;
-      this.$nextTick(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      });
-    },
     onStampClick() {
       if (!this.has_audio) return;
       this.toggleStampAudio();
@@ -1242,13 +1233,6 @@ export default {
     openShareUrl() {
       if (!this.share_url) return;
       window.open(this.share_url, "_blank", "noopener,noreferrer");
-    },
-    goToEditor() {
-      if (!this.publication_slug) return;
-      this.$router.push({
-        name: "Postcard",
-        params: { publication_slug: this.publication_slug },
-      });
     },
     goHome() {
       this.$router.push({ name: "Accueil" });
@@ -1995,12 +1979,6 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-
-._postcard--shareBar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.65rem;
 }
 
 ._postcard--editBtn {
