@@ -95,3 +95,24 @@ export default {
   margin: 0 auto;
 }
 </style>
+<style lang="scss">
+// Fixed-height ancestors and the scrolling ._viewContent--content clip
+// the printed booklet to its first page.
+@media print {
+  html,
+  body,
+  #app {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  ._publicPublication {
+    ._editionExport,
+    ._viewContent,
+    ._viewContent--content {
+      position: static !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
+  }
+}
+</style>
