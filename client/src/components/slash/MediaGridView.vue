@@ -1,5 +1,5 @@
 <template>
-  <div class="_mediaGridView">
+  <div class="_mediaGridView" :class="{ 'is--pickMode': pick_mode }">
     <div class="_mediaGridView--toolbar" role="toolbar" :aria-label="$t('grid_group_by')">
       <span class="_mediaGridView--toolbarLabel">{{ $t("grid_group_by") }}</span>
       <div class="_mediaGridView--toolbarButtons">
@@ -38,6 +38,7 @@
             :show_media_list_sidebar="show_media_list_sidebar"
             :media_list_paths="media_list_paths"
             :is_selected="selected_files.includes(file.$path)"
+            :click_to_select="pick_mode"
             class="_mediaGridView--item"
             :data-file-path="file.$path"
             @select="onSelect"
@@ -96,6 +97,10 @@ export default {
     selected_files: {
       type: Array,
       default: () => [],
+    },
+    pick_mode: {
+      type: Boolean,
+      default: false,
     },
   },
   components: {
@@ -241,6 +246,17 @@ export default {
   padding: calc(var(--spacing, 1rem) * 2);
   padding-top: calc(var(--spacing, 1rem) * 7); /* under the top bar */
   background: var(--c-slash-blue, var(--c-bleuvert));
+
+  &.is--pickMode {
+    position: relative;
+    inset: auto;
+    padding: calc(var(--spacing, 1rem) * 1);
+    border-radius: var(--border-radius);
+
+    ._mediaGridView--grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+  }
 }
 
 ._mediaGridView--toolbar {

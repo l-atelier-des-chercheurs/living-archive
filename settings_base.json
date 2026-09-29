@@ -246,6 +246,9 @@
           }
         },
         "$files": {
+          "thumbs": {
+            "resolutions": [50, 220, 320, 640, 1600]
+          },
           "fields": {
             "title": {
               "type": "string"

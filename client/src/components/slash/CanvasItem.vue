@@ -61,10 +61,7 @@
       </button>
     </div>
 
-    <div
-      v-if="can_show_media_list_handle"
-      class="_canvasItem--mediaListHandle"
-    >
+    <div v-if="can_show_media_list_handle" class="_canvasItem--mediaListHandle">
       <MediaListDragHandle
         :file="file"
         :size="mode === 'canvas' ? 'small' : ''"
@@ -112,6 +109,11 @@ export default {
       type: Array,
       default: () => [],
     },
+    // clicking any media selects it instead of opening it (media pickers)
+    click_to_select: {
+      type: Boolean,
+      default: false,
+    },
     is_selected: {
       type: Boolean,
       default: false,
@@ -150,7 +152,11 @@ export default {
       return this.mode === "grid" || this.mode === "timeline";
     },
     show_open_button() {
-      return this.enable_selection && !this.opens_on_content_click;
+      return (
+        this.enable_selection &&
+        !this.opens_on_content_click &&
+        !this.click_to_select
+      );
     },
     media_plyr_options() {
       if (this.is_video) {
@@ -309,6 +315,12 @@ export default {
         this.is_inline_playing &&
         event.target.closest(".plyr__progress, input[type='range']")
       ) {
+        return;
+      }
+
+      if (this.click_to_select) {
+        const mode = event.metaKey || event.shiftKey ? "append" : "replace";
+        this.$emit("select", this.file.$path, mode);
         return;
       }
 

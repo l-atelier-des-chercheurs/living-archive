@@ -1,3 +1,5 @@
+import { ROOT_PUBLICATIONS_PATH } from "@/utils/folderPublications.js";
+
 export default {
   computed: {},
   methods: {
@@ -384,6 +386,10 @@ export default {
       // for lumadoc: texts and images
       if (this.getParent(path_to_source_media_meta) === this.publication_path)
         return { meta_filename: this.getFilename(path_to_source_media_meta) };
+
+      // root publications have no parent project to link medias from
+      if (this.getParent(publication_path) === ROOT_PUBLICATIONS_PATH)
+        import_mode = "copy";
 
       if (import_mode === "link") {
         // check if already in parent project

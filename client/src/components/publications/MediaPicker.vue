@@ -1,5 +1,14 @@
 <template>
+  <PickMediaFromSlashFolders
+    v-if="is_root_publication"
+    :title="select_mode === 'single' ? $t('pick_media') : $t('pick_medias')"
+    :select_mode="select_mode"
+    :pick_from_types="pick_from_types"
+    @pickMedias="handlePickMedias"
+    @close="handleClose"
+  />
   <BaseModal2
+    v-else
     :title="select_mode === 'single' ? $t('pick_media') : $t('pick_medias')"
     class="_mediaPicker"
     size="large"
@@ -60,6 +69,7 @@
 </template>
 <script>
 import ResourcesPicker from "@/components/publications/modules/ResourcesPicker.vue";
+import { ROOT_PUBLICATIONS_PATH } from "@/utils/folderPublications.js";
 
 export default {
   props: {
@@ -77,6 +87,8 @@ export default {
   },
   components: {
     ResourcesPicker,
+    PickMediaFromSlashFolders: () =>
+      import("@/components/slash/PickMediaFromSlashFolders.vue"),
   },
   inject: {
     $getMetaFilenamesAlreadyPresent: {
@@ -98,6 +110,9 @@ export default {
       return this.$getMetaFilenamesAlreadyPresent
         ? this.$getMetaFilenamesAlreadyPresent()
         : [];
+    },
+    is_root_publication() {
+      return this.getParent(this.publication_path) === ROOT_PUBLICATIONS_PATH;
     },
     current_project_path() {
       const all_publications_path = this.getParent(this.publication_path);
