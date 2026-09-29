@@ -264,9 +264,26 @@
       <!-- Step 2 / share view: generated card -->
       <div v-else class="_postcard--result">
         <p v-if="!is_share_view" class="_postcard--step">Step 2 · Your card</p>
+        <input
+          v-if="is_share_view"
+          ref="image_input"
+          class="_postcard--fileInput"
+          type="file"
+          accept="image/*"
+          @change="onImageChange"
+        />
+        <input
+          v-if="is_share_view"
+          ref="audio_input"
+          class="_postcard--fileInput"
+          type="file"
+          accept="audio/*"
+          @change="onAudioChange"
+        />
 
         <div
           class="_postcard--card"
+          :class="{ 'is--editing': is_editing }"
           :style="card_preview_style"
           aria-label="Postcard"
         >
@@ -278,33 +295,83 @@
               alt=""
             />
             <div v-else class="_postcard--imagePlaceholder">Image</div>
+            <button
+              v-if="is_editing"
+              type="button"
+              class="_postcard--zoneEdit"
+              title="Change image"
+              :disabled="is_uploading_image"
+              @click="openImagePicker"
+            >
+              <b-icon
+                :icon="is_uploading_image ? 'arrow-repeat' : 'image'"
+                :class="{ _spinner: is_uploading_image }"
+              />
+            </button>
           </div>
 
           <div class="_postcard--rightPane">
-            <button
-              v-if="has_audio"
-              type="button"
-              class="_postcard--stamp"
-              :class="{ 'is--playing': is_audio_playing }"
-              :aria-label="is_audio_playing ? 'Stop audio' : 'Play audio'"
-              @click="onStampClick"
-            >
-              <span
-                v-if="is_audio_playing"
-                class="_postcard--stopBtn"
-                aria-hidden="true"
+            <div class="_postcard--stampSlot">
+              <button
+                v-if="has_audio"
+                type="button"
+                class="_postcard--stamp"
+                :class="{ 'is--playing': is_audio_playing }"
+                :aria-label="is_audio_playing ? 'Stop audio' : 'Play audio'"
+                @click="onStampClick"
               >
-                <span class="_postcard--stopIcon"></span>
-              </span>
-              <img
-                v-else-if="active_qr_url"
-                class="_postcard--qr"
-                :src="active_qr_url"
-                alt=""
-              />
-            </button>
+                <span
+                  v-if="is_audio_playing"
+                  class="_postcard--stopBtn"
+                  aria-hidden="true"
+                >
+                  <span class="_postcard--stopIcon"></span>
+                </span>
+                <img
+                  v-else-if="active_qr_url"
+                  class="_postcard--qr"
+                  :src="active_qr_url"
+                  alt=""
+                />
+              </button>
+              <button
+                v-else-if="is_editing"
+                type="button"
+                class="_postcard--stamp is--empty"
+                title="Add a sound"
+                :disabled="is_uploading_audio"
+                @click="openAudioPicker"
+              >
+                <b-icon icon="soundwave" />
+              </button>
+              <button
+                v-if="is_editing && has_audio"
+                type="button"
+                class="_postcard--zoneEdit is--onStamp"
+                title="Change sound"
+                :disabled="is_uploading_audio"
+                @click="openAudioPicker"
+              >
+                <b-icon
+                  :icon="is_uploading_audio ? 'arrow-repeat' : 'soundwave'"
+                  :class="{ _spinner: is_uploading_audio }"
+                />
+              </button>
+            </div>
 
-            <div class="_postcard--rules">
+            <label v-if="is_editing_text" class="_postcard--rules is--editable">
+              <textarea
+                ref="share_text"
+                class="_postcard--cardText"
+                :value="postcard_text"
+                :maxlength="text_max_length"
+                :rows="text_line_count"
+                aria-label="Text"
+                @input="onTextInput"
+                @blur="finishTextEdit"
+              ></textarea>
+            </label>
+            <div v-else class="_postcard--rules">
               <div
                 v-for="(line, index) in preview_text_lines"
                 :key="'rule-' + index"
@@ -312,6 +379,15 @@
               >
                 <span class="_postcard--ruleText">{{ line }}</span>
               </div>
+              <button
+                v-if="is_editing"
+                type="button"
+                class="_postcard--zoneEdit"
+                title="Change text"
+                @click="startTextEdit"
+              >
+                <b-icon icon="fonts" />
+              </button>
             </div>
           </div>
         </div>
@@ -405,6 +481,15 @@
       />
       <button
         v-if="can_edit && publication && publication.$path"
+        type="button"
+        class="_postcard--editBtn"
+        @click="toggleShareEdit"
+      >
+        <b-icon :icon="is_editing ? 'check2' : 'pencil'" />
+        {{ is_editing ? $t("done") : $t("edit") }}
+      </button>
+      <button
+        v-if="can_edit && publication && publication.$path && !is_editing"
         type="button"
         class="_postcard--editBtn"
         @click="show_remove_menu = true"
@@ -536,6 +621,8 @@ export default {
       generation_progress: 0,
       generation_status: "",
       preview_open: false,
+      is_editing: false,
+      is_editing_text: false,
       is_wide_layout: false,
       preview_mq: null,
       sibling_postcard_slugs: [],
@@ -1389,6 +1476,7 @@ export default {
       try {
         await this.uploadMediaFile("image", file);
         await this.persistMediaSelection();
+        await this.refreshPostcardCover();
       } catch (err) {
         // form_error already set
       }
@@ -1409,6 +1497,7 @@ export default {
       try {
         await this.uploadMediaFile("audio", file);
         await this.persistMediaSelection();
+        await this.refreshPostcardCover();
       } catch (err) {
         // form_error already set
       }
@@ -1419,6 +1508,38 @@ export default {
         value.length > this.text_max_length
           ? value.slice(0, this.text_max_length)
           : value;
+    },
+    toggleShareEdit() {
+      if (this.is_editing) {
+        this.is_editing = false;
+        this.is_editing_text = false;
+        return;
+      }
+      this.is_editing = true;
+    },
+    startTextEdit() {
+      this.is_editing_text = true;
+      this.$nextTick(() => {
+        this.$refs.share_text?.focus();
+      });
+    },
+    async finishTextEdit() {
+      this.is_editing_text = false;
+      try {
+        await this.persistMeta();
+        await this.refreshPostcardCover();
+      } catch (err) {
+        this.form_error = err?.message || "Could not save the text.";
+      }
+    },
+    async refreshPostcardCover() {
+      this.share_file = null;
+      try {
+        await this.buildQrVariants();
+        await this.uploadPostcardCover();
+      } catch (err) {
+        console.warn("Postcard cover refresh skipped", err);
+      }
     },
     wrapTextToLines(text, chars_per_line, max_lines) {
       const lines = [];
@@ -1546,7 +1667,7 @@ export default {
       const rules_right = width - pad;
       const rules_width = rules_right - rules_left;
       const line_gap = (rules_bottom - rules_top) / TEXT_LINE_COUNT;
-      const font_size = Math.round(line_gap * 0.55);
+      const font_size = Math.round(width * 0.0225);
 
       ctx.fillStyle = "#1a1a1a";
       ctx.font = `${font_size}px "Rubik", "Helvetica Neue", sans-serif`;
@@ -2493,6 +2614,8 @@ export default {
 ._postcard--rules.is--editable {
   container-type: size;
   position: relative;
+  /* cqi here is the card’s, same measure as the preview lines */
+  font-size: max(0.5rem, 2.25cqi);
 }
 
 ._postcard--cardText {
@@ -2513,8 +2636,8 @@ export default {
     var(--pc-rule) 12.5%
   );
   color: var(--pc-ink);
-  font-family: var(--pc-font);
-  font-size: max(0.55rem, 7cqh);
+  font-family: inherit;
+  font-size: inherit;
   line-height: 12.5cqh;
   caret-color: var(--c-slash-burgundy);
 
@@ -2528,6 +2651,53 @@ export default {
 
   &:disabled {
     opacity: 0.7;
+  }
+}
+
+._postcard--stampSlot {
+  position: relative;
+  align-self: flex-end;
+  width: 28%;
+  min-width: 3rem;
+}
+
+._postcard--stampSlot ._postcard--stamp {
+  width: 100%;
+}
+
+._postcard--zoneEdit {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--c-slash-burgundy);
+  color: #fff;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+
+  &.is--onStamp {
+    left: auto;
+    top: -0.4rem;
+    right: -0.4rem;
+    transform: none;
+    width: 1.7rem;
+    height: 1.7rem;
+    font-size: 0.85rem;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
   }
 }
 
@@ -2619,6 +2789,7 @@ export default {
 }
 
 ._postcard--rules {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -2640,7 +2811,6 @@ export default {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: clip;
-  font-size: clamp(0.5rem, 2.4vw, 0.72rem);
   font-size: max(0.5rem, 2.25cqi);
   line-height: 1.2;
   padding-bottom: 0.12em;
