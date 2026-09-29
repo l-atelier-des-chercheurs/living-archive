@@ -421,6 +421,29 @@
     </div>
 
     <div v-if="is_share_view" class="_postcard--shareActions">
+      <div v-if="can_browse_postcards" class="_postcard--browse">
+        <button
+          type="button"
+          class="_postcard--editBtn is--icon"
+          :disabled="!previous_postcard_slug"
+          :title="$t('previous')"
+          @click="goToPostcard(previous_postcard_slug)"
+        >
+          <b-icon icon="arrow-left" :label="$t('previous')" />
+        </button>
+        <span class="_postcard--browseCount">
+          {{ sibling_index + 1 }} / {{ sibling_postcard_slugs.length }}
+        </span>
+        <button
+          type="button"
+          class="_postcard--editBtn is--icon"
+          :disabled="!next_postcard_slug"
+          :title="$t('next')"
+          @click="goToPostcard(next_postcard_slug)"
+        >
+          <b-icon icon="arrow-right" :label="$t('next')" />
+        </button>
+      </div>
       <PostcardShareMenu
         v-if="!is_loading && !load_error"
         trigger_class="_postcard--editBtn"
@@ -568,11 +591,24 @@ export default {
       preview_open: false,
       is_wide_layout: false,
       preview_mq: null,
+      sibling_postcard_slugs: [],
     };
   },
   computed: {
     is_share_view() {
       return this.$route.name === "PostcardShare";
+    },
+    sibling_index() {
+      return this.sibling_postcard_slugs.indexOf(this.publication_slug);
+    },
+    can_browse_postcards() {
+      return this.sibling_index !== -1 && this.sibling_postcard_slugs.length > 1;
+    },
+    previous_postcard_slug() {
+      return this.sibling_postcard_slugs[this.sibling_index - 1] || "";
+    },
+    next_postcard_slug() {
+      return this.sibling_postcard_slugs[this.sibling_index + 1] || "";
     },
     is_draft_mode() {
       return this.$route.name === "PostcardNew";
@@ -673,10 +709,14 @@ export default {
     }
     if (this.is_share_view) {
       this.step = "card";
+      this.loadSiblingPostcards();
     }
   },
   mounted() {
     this.initPreviewLayout();
+    if (this.is_share_view) {
+      window.addEventListener("keydown", this.onShareKeydown);
+    }
   },
   watch: {
     has_audio() {
@@ -684,6 +724,7 @@ export default {
     },
   },
   beforeDestroy() {
+    window.removeEventListener("keydown", this.onShareKeydown);
     this.teardownPreviewLayout();
     this.stopStampAudio();
     if (
@@ -741,21 +782,61 @@ export default {
       // Public CP URLs must work without general password / FullUI init.
       this.$root.is_loading = false;
       try {
-        // needed for the author to delete the card (API is password-gated)
+        // the API is password-gated: needed to browse cards and delete one
         this.$api.general_password =
           localStorage.getItem("general_password") || "";
         const raw = localStorage.getItem("tokenpath");
-        if (!raw) return;
-        const { token, token_path } = JSON.parse(raw);
-        if (!token || !token_path) return;
-        this.$api.tokenpath.token = token;
-        this.$api.tokenpath.token_path = token_path;
-        if (typeof this.$api.setAuthorizationHeader === "function") {
-          this.$api.setAuthorizationHeader();
+        if (raw) {
+          const { token, token_path } = JSON.parse(raw);
+          if (token && token_path) {
+            this.$api.tokenpath.token = token;
+            this.$api.tokenpath.token_path = token_path;
+          }
         }
       } catch (err) {
         console.warn("Postcard share session restore skipped", err);
       }
+      this.$api.setAuthorizationHeader();
+    },
+    async loadSiblingPostcards() {
+      const needs_general_password =
+        this.$root.app_infos?.instance_meta?.has_general_password === true &&
+        !this.$api.general_password;
+      if (needs_general_password) return;
+      try {
+        const publications = await this.$api.getFolders({
+          path: getRootPublicationsPath(),
+        });
+        this.sibling_postcard_slugs = publications
+          .filter((pub) => pub.template === "postcard" && pub.$cover)
+          .sort(
+            (a, b) => +new Date(b.$date_created) - +new Date(a.$date_created)
+          )
+          .map((pub) => pub.$path.split("/").pop());
+      } catch (err) {
+        this.sibling_postcard_slugs = [];
+      }
+    },
+    goToPostcard(slug) {
+      if (!slug) return;
+      this.stopStampAudio();
+      this.$router.push({
+        name: "PostcardShare",
+        params: { publication_slug: slug },
+      });
+    },
+    onShareKeydown(event) {
+      if (!this.can_browse_postcards || this.show_remove_menu) return;
+      const target = event.target;
+      if (
+        target &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      )
+        return;
+      if (event.key === "ArrowLeft") this.goToPostcard(this.previous_postcard_slug);
+      else if (event.key === "ArrowRight")
+        this.goToPostcard(this.next_postcard_slug);
     },
     tokenPathCanEdit(folder) {
       if (!folder) return false;
@@ -1968,6 +2049,26 @@ export default {
   ._postcard--editBtn {
     flex: 0 0 auto;
   }
+}
+
+._postcard--editBtn.is--icon {
+  padding: 0.35rem;
+}
+
+._postcard--browse {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 0.5rem;
+}
+
+._postcard--browseCount {
+  flex: 0 0 auto;
+  font-family: var(--pc-font);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--pc-muted);
 }
 
 ._postcard--shell.is--share {
