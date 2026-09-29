@@ -43,6 +43,16 @@
           <b-icon icon="gear" :aria-label="$t('settings')" />
           {{ $t("settings") }}
         </button>
+        <a
+          v-if="public_url"
+          class="u-buttonLink"
+          :href="public_url"
+          target="_blank"
+          rel="noopener"
+        >
+          <b-icon icon="box-arrow-up-right" />
+          {{ $t("public_view") }}
+        </a>
         <button
           v-if="can_edit"
           type="button"
@@ -84,7 +94,10 @@
   </div>
 </template>
 <script>
-import { getTemplateConfig } from "@/utils/folderPublications.js";
+import {
+  getTemplateConfig,
+  publicationSlugFromPath,
+} from "@/utils/folderPublications.js";
 
 export default {
   props: {
@@ -107,6 +120,14 @@ export default {
     template_label() {
       const config = getTemplateConfig(this.publication?.template);
       return config ? this.$t(config.label_key) : "";
+    },
+    public_url() {
+      const publication_slug = publicationSlugFromPath(this.publication?.$path);
+      if (!publication_slug) return "";
+      return this.$router.resolve({
+        name: "PublicPublication",
+        params: { publication_slug },
+      }).href;
     },
   },
   methods: {

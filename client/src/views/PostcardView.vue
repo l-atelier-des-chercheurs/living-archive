@@ -596,7 +596,7 @@ export default {
   },
   computed: {
     is_share_view() {
-      return this.$route.name === "PostcardShare";
+      return this.$route.name === "PublicPublication";
     },
     sibling_index() {
       return this.sibling_postcard_slugs.indexOf(this.publication_slug);
@@ -647,7 +647,7 @@ export default {
     share_url() {
       if (!this.publication_slug) return "";
       const resolved = this.$router.resolve({
-        name: "PostcardShare",
+        name: "PublicPublication",
         params: { publication_slug: this.publication_slug },
       });
       try {
@@ -821,7 +821,7 @@ export default {
       if (!slug) return;
       this.stopStampAudio();
       this.$router.push({
-        name: "PostcardShare",
+        name: "PublicPublication",
         params: { publication_slug: slug },
       });
     },
@@ -939,7 +939,7 @@ export default {
           // a generated card (with cover) is frozen: only the share view remains
           if (this.publication?.$cover) {
             await this.$router.replace({
-              name: "PostcardShare",
+              name: "PublicPublication",
               params: { publication_slug: this.publication_slug },
             });
             return;
@@ -1225,7 +1225,7 @@ export default {
           await this.uploadPostcardCover();
           this.setGenerationProgress(100, this.$t("postcard_progress_done"));
           await this.$router.replace({
-            name: "PostcardShare",
+            name: "PublicPublication",
             params: { publication_slug: this.publication_slug },
           });
         }
@@ -1302,7 +1302,7 @@ export default {
 
       this.setGenerationProgress(98, this.$t("postcard_progress_done"));
       await this.$router.replace({
-        name: "PostcardShare",
+        name: "PublicPublication",
         params: { publication_slug: slug },
       });
       this.setGenerationProgress(100, this.$t("postcard_progress_done"));

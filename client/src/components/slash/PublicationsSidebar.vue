@@ -502,7 +502,7 @@ export default {
       const slug = pub.$path.split("/").pop();
       if (pub.template === "postcard") {
         this.$router.push({
-          name: "PostcardShare",
+          name: "PublicPublication",
           params: { publication_slug: slug },
         });
         return;

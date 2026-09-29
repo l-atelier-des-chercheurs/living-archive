@@ -19,6 +19,10 @@ import ViewContent from "@/components/publications/edition/ViewContent.vue";
 export default {
   props: {
     publication: Object,
+    default_view_mode: {
+      type: String,
+      default: "web",
+    },
   },
   components: {
     ViewContent,
@@ -35,7 +39,7 @@ export default {
       return this.$route.query?.chapter || "";
     },
     view_mode() {
-      return this.$route.query?.view_mode || "web";
+      return this.$route.query?.view_mode || this.default_view_mode;
     },
     opened_style_file_meta() {
       return this.$route.query?.style || "default";

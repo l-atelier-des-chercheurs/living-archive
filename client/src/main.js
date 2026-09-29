@@ -24,6 +24,7 @@ Vue.prototype.$eventHub = new Vue(); // Global event bus
 
 // import "@/utils/utils.scss";
 import "@/utils/utils_slash.scss";
+import "@/utils/utils_publications.scss";
 
 import { slash_contributors_list } from "@/config/slash_contributors_list.js";
 import {

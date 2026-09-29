@@ -46,12 +46,14 @@ const routes = [
     component: () => import("@/views/PostcardView.vue"),
   },
   {
+    // keeps shared postcard links and printed QR codes working
     path: "/postcard/:publication_slug/view",
-    name: "PostcardShare",
-    meta: {
-      static: true,
-    },
-    component: () => import("@/views/PostcardView.vue"),
+    redirect: (to) => ({
+      name: "PublicPublication",
+      params: { publication_slug: to.params.publication_slug },
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: "/postcard/:publication_slug",
@@ -63,7 +65,16 @@ const routes = [
     redirect: { name: "PostcardNew" },
   },
   {
+    // also loaded by the server (puppeteer) to export PDF/PNG, with ?superadmintoken=
     path: "/publications/:publication_slug",
+    name: "PublicPublication",
+    meta: {
+      static: true,
+    },
+    component: () => import("@/views/PublicPublicationView.vue"),
+  },
+  {
+    path: "/publications/:publication_slug/edit",
     name: "RootPublication",
     component: () => import("@/views/RootPublicationView.vue"),
   },

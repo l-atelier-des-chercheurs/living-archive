@@ -108,9 +108,11 @@ export function buildPublicationCreateMeta({
     additional_meta.message = "";
   }
 
-  // Shareable postcard URLs must bypass instance general password
+  // Shareable URLs (/publications/:slug) must bypass instance general password
   if (config.key === "postcard") {
     additional_meta.$public = true;
+  } else if (config.key === "a5_booklet") {
+    additional_meta.$public = is_private !== true;
   }
 
   if (at_root) {

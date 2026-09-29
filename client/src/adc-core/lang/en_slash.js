@@ -58,6 +58,7 @@ export default {
   postcard_progress_cover: "Building cover…",
   postcard_progress_done: "Done",
   preview: "Preview",
+  public_view: "Public view",
   share_png_image: "PNG image",
   share_preparing: "Preparing…",
   download_as_image: "Download as image",
