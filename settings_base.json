@@ -237,6 +237,12 @@
           },
           "source_medias": {
             "type": "array"
+          },
+          "sections_list": {
+            "type": "array"
+          },
+          "number_of_book_pages": {
+            "type": "number"
           }
         },
         "$files": {
@@ -249,6 +255,54 @@
             },
             "source_medias": {
               "type": "array"
+            },
+            "content_type": {
+              "type": "string"
+            },
+            "caption": {
+              "type": "string"
+            },
+            "section_title": {
+              "type": "string"
+            },
+            "section_title_is_visible": {
+              "type": "boolean"
+            },
+            "section_type": {
+              "type": "string"
+            },
+            "section_starts_on_page": {
+              "type": "string"
+            },
+            "section_description": {
+              "type": "string"
+            },
+            "section_color": {
+              "type": "string"
+            },
+            "main_text_meta": {
+              "type": "string"
+            },
+            "grid_areas": {
+              "type": "array"
+            },
+            "column_count": {
+              "type": "number"
+            },
+            "row_count": {
+              "type": "number"
+            },
+            "cover_type": {
+              "type": "string"
+            },
+            "cover_layout_mode": {
+              "type": "string"
+            },
+            "is_css_styles": {
+              "type": "string"
+            },
+            "css_title": {
+              "type": "string"
             }
           }
         }

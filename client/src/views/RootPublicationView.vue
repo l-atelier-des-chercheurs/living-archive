@@ -1,94 +1,101 @@
 <template>
-  <div class="_rootPub">
-    <header class="_rootPub--header">
-      <button type="button" class="u-button" @click="goHome">
-        <b-icon icon="arrow-left" />
-        {{ $t("back") }}
-      </button>
-      <h1 class="_rootPub--title">{{ publication_title }}</h1>
-      <span class="_rootPub--template">{{ template_label }}</span>
-    </header>
+  <div class="_rootPub" :class="{ 'is--edition': is_edition }">
+    <RootEditionPublication
+      v-if="is_edition"
+      :publication="publication"
+      :pane_infos="pane_infos"
+      :can_edit="can_edit"
+      @updatePane="updatePane"
+      @close="goHome"
+      @remove="show_remove_menu = true"
+    />
+    <template v-else>
+      <header class="_rootPub--header">
+        <button type="button" class="u-button" @click="goHome">
+          <b-icon icon="arrow-left" />
+          {{ $t("back") }}
+        </button>
+        <h1 class="_rootPub--title">{{ publication_title }}</h1>
+        <span class="_rootPub--template">{{ template_label }}</span>
+      </header>
 
-    <div v-if="is_loading" class="_rootPub--loading">{{ $t("loading") }}</div>
-    <div v-else-if="load_error" class="u-errorMsg">{{ load_error }}</div>
+      <div v-if="is_loading" class="_rootPub--loading">{{ $t("loading") }}</div>
+      <div v-else-if="load_error" class="u-errorMsg">{{ load_error }}</div>
 
-    <div v-else class="_rootPub--body">
-      <p v-if="!resolved_items.length" class="_rootPub--hint">
-        {{ $t("publication_add_medias_hint") }}
-      </p>
+      <div v-else class="_rootPub--body">
+        <p v-if="!resolved_items.length" class="_rootPub--hint">
+          {{ $t("publication_add_medias_hint") }}
+        </p>
 
-      <ol v-else class="_rootPub--mediaList">
-        <li
-          v-for="(item, index) in resolved_items"
-          :key="item.path"
-          class="_rootPub--mediaRow"
-        >
-          <span class="_rootPub--order">{{ index + 1 }}</span>
-          <div class="_rootPub--thumb">
-            <MediaContent
-              v-if="item.file"
-              :file="item.file"
-              context="preview"
-              :resolution="320"
-            />
-          </div>
-          <span class="_rootPub--mediaTitle">{{ item.label }}</span>
-          <button
-            v-if="can_edit"
-            type="button"
-            class="u-button u-button_icon"
-            :title="$t('remove')"
-            @click="removeMediaAt(index)"
+        <ol v-else class="_rootPub--mediaList">
+          <li
+            v-for="(item, index) in resolved_items"
+            :key="item.path"
+            class="_rootPub--mediaRow"
           >
-            <b-icon icon="x" />
-          </button>
-        </li>
-      </ol>
-
-      <div v-if="can_edit" class="_rootPub--picker">
-        <DLabel :str="$t('add_medias')" />
-        <div class="_rootPub--folderPick">
-          <select v-model="picker_folder_path" @change="loadPickerFiles">
-            <option value="">— folder —</option>
-            <option
-              v-for="folder in accessible_folders"
-              :key="folder.$path"
-              :value="folder.$path"
-            >
-              {{ folder.title || folder.$path.split("/").pop() }}
-            </option>
-          </select>
-        </div>
-        <ul v-if="picker_files.length" class="_rootPub--pickerList">
-          <li v-for="file in available_picker_files" :key="file.$path">
-            <button
-              type="button"
-              class="_rootPub--pickerItem"
-              @click="addMedia(file.$path)"
-            >
+            <span class="_rootPub--order">{{ index + 1 }}</span>
+            <div class="_rootPub--thumb">
               <MediaContent
-                :file="file"
+                v-if="item.file"
+                :file="item.file"
                 context="preview"
-                :resolution="50"
+                :resolution="320"
               />
-              <span>{{ getItemLabel(file) }}</span>
-              <b-icon icon="plus" />
+            </div>
+            <span class="_rootPub--mediaTitle">{{ item.label }}</span>
+            <button
+              v-if="can_edit"
+              type="button"
+              class="u-button u-button_icon"
+              :title="$t('remove')"
+              @click="removeMediaAt(index)"
+            >
+              <b-icon icon="x" />
             </button>
           </li>
-        </ul>
-      </div>
+        </ol>
 
-      <div v-if="can_edit && publication.$path" class="_rootPub--dangerZone">
-        <button
-          type="button"
-          class="_rootPub--deleteBtn"
-          @click="show_remove_menu = true"
-        >
-          <b-icon icon="trash" />
-          {{ $t("remove") }}
-        </button>
+        <div v-if="can_edit" class="_rootPub--picker">
+          <DLabel :str="$t('add_medias')" />
+          <div class="_rootPub--folderPick">
+            <select v-model="picker_folder_path" @change="loadPickerFiles">
+              <option value="">— folder —</option>
+              <option
+                v-for="folder in accessible_folders"
+                :key="folder.$path"
+                :value="folder.$path"
+              >
+                {{ folder.title || folder.$path.split("/").pop() }}
+              </option>
+            </select>
+          </div>
+          <ul v-if="picker_files.length" class="_rootPub--pickerList">
+            <li v-for="file in available_picker_files" :key="file.$path">
+              <button
+                type="button"
+                class="_rootPub--pickerItem"
+                @click="addMedia(file.$path)"
+              >
+                <MediaContent :file="file" context="preview" :resolution="50" />
+                <span>{{ getItemLabel(file) }}</span>
+                <b-icon icon="plus" />
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="can_edit && publication.$path" class="_rootPub--dangerZone">
+          <button
+            type="button"
+            class="_rootPub--deleteBtn"
+            @click="show_remove_menu = true"
+          >
+            <b-icon icon="trash" />
+            {{ $t("remove") }}
+          </button>
+        </div>
       </div>
-    </div>
+    </template>
 
     <RemoveMenu2
       v-if="show_remove_menu && publication?.$path"
@@ -114,7 +121,11 @@ import {
 
 export default {
   name: "RootPublicationView",
-  components: { MediaContent },
+  components: {
+    MediaContent,
+    RootEditionPublication: () =>
+      import("@/components/publications/RootEditionPublication.vue"),
+  },
   data() {
     return {
       publication: null,
@@ -144,7 +155,22 @@ export default {
     },
     template_label() {
       const config = getTemplateConfig(this.publication?.template);
-      return config ? this.$t(config.label_key) : this.publication?.template || "";
+      return config
+        ? this.$t(config.label_key)
+        : this.publication?.template || "";
+    },
+    is_edition() {
+      return !this.is_loading && this.publication?.template === "edition";
+    },
+    pane_infos() {
+      const query = this.$route.query || {};
+      const pane_infos = { view_mode: "book" };
+      ["chapter", "view_mode", "style"].forEach((key) => {
+        if (query[key]) pane_infos[key] = query[key];
+      });
+      if (query.edit_graphics === "true" || query.edit_graphics === true)
+        pane_infos.edit_graphics = true;
+      return pane_infos;
     },
     can_edit() {
       if (!this.publication) return false;
@@ -191,6 +217,9 @@ export default {
     },
     goHome() {
       this.$router.push({ name: "Accueil" });
+    },
+    updatePane({ key, value }) {
+      this.updatePageQuery({ prop: key, val: value });
     },
     onPublicationRemoved() {
       this.show_remove_menu = false;
@@ -287,6 +316,13 @@ export default {
   max-width: 40rem;
   margin: 0 auto;
   padding: calc(var(--spacing) * 1.5);
+
+  &.is--edition {
+    position: relative;
+    max-width: none;
+    height: 100%;
+    padding: 0;
+  }
 }
 
 ._rootPub--header {
@@ -314,7 +350,7 @@ export default {
 
 ._rootPub--mediaList {
   list-style: none;
-  margin: 0 0 calc(var(--spacing)) ;
+  margin: 0 0 calc(var(--spacing));
   padding: 0;
   display: flex;
   flex-direction: column;

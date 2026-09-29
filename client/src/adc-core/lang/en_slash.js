@@ -48,7 +48,7 @@ export default {
     "This permanently deletes the postcard and its files. This cannot be undone.",
   remove_publication_expl:
     "This permanently deletes the publication. The medias it uses stay in their folders.",
-  create_booklet_lead: "Give your booklet a title to start composing pages.",
+  create_booklet_lead: "Give your booklet a title to start writing its chapters.",
   create_publication_lead: "Choose a title for your publication.",
   postcard_progress_starting: "Starting…",
   postcard_progress_creating: "Creating postcard…",

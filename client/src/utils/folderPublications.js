@@ -4,6 +4,7 @@ export const ROOT_PUBLICATIONS_PATH = "publications";
 export const TEMPLATE_REGISTRY = {
   a5_booklet: {
     key: "a5_booklet",
+    template: "edition",
     label_key: "template_a5_booklet",
     layout_mode: "print",
     page_width: 148,
@@ -47,8 +48,16 @@ export function getPublicationPath(folder_path, publication_slug) {
   return `${getFolderPublicationsPath(folder_path)}/${publication_slug}`;
 }
 
+/** Accepts a registry key or a stored publication `template` value. */
 export function getTemplateConfig(template_key) {
-  return TEMPLATE_REGISTRY[template_key] || null;
+  if (!template_key) return null;
+  return (
+    TEMPLATE_REGISTRY[template_key] ||
+    Object.values(TEMPLATE_REGISTRY).find(
+      (config) => config.template === template_key
+    ) ||
+    null
+  );
 }
 
 /** Display title from postcard body text: max 15 chars, ellipsis if longer. */
@@ -83,15 +92,21 @@ export function buildPublicationCreateMeta({
     throw new Error(`Unknown publication template: ${template_key}`);
   }
 
+  const template = config.template || config.key;
+
   const additional_meta = {
     title,
-    template: config.key,
+    template,
     layout_mode: config.layout_mode,
     requested_slug: requested_slug || title,
-    source_medias: [],
-    message: "",
     $status: is_private === true ? "private" : "public",
   };
+
+  // edition chapters hold their own medias
+  if (template !== "edition") {
+    additional_meta.source_medias = [];
+    additional_meta.message = "";
+  }
 
   // Shareable postcard URLs must bypass instance general password
   if (config.key === "postcard") {

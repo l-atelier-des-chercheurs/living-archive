@@ -507,7 +507,7 @@ export default {
         });
         return;
       }
-      if (pub.template === "a5_booklet" || pub.template === "carousel") {
+      if (["edition", "a5_booklet", "carousel"].includes(pub.template)) {
         this.$router.push({
           name: "RootPublication",
           params: { publication_slug: slug },
