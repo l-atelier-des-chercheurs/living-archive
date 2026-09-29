@@ -26,7 +26,7 @@
     </header>
 
     <header v-else class="_postcard--shareHeader">
-      <SiteBrand :link_home="true" :new_tab="true" />
+      <SiteBrand :link_home="true" />
     </header>
 
     <div
@@ -1473,7 +1473,7 @@ export default {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
 
-      ctx.fillStyle = "#e5ffdb";
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, width, height);
 
       const half = width / 2;
@@ -1684,7 +1684,7 @@ export default {
   --c-slash-orange: #ff5829;
   --pc-ink: #262626;
   --pc-muted: #5a5a5a;
-  --pc-paper: var(--c-slash-mint);
+  --pc-paper: #fff;
   --pc-rule: rgba(73, 128, 200, 0.4);
   --pc-font: "Rubik", "Helvetica Neue", sans-serif;
   --pc-radius: 0.75rem;
@@ -2047,9 +2047,6 @@ export default {
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
-  background: color-mix(in srgb, var(--c-slash-mint) 65%, white);
-  border: 2px solid var(--c-slash-mint);
-  border-radius: 0.75rem;
 }
 
 ._postcard--field {
@@ -2390,7 +2387,7 @@ export default {
   gap: 0.65rem;
   padding: 0.65rem 0.7rem 0.8rem;
   min-width: 0;
-  background: var(--c-slash-mint);
+  background: var(--pc-paper);
 }
 
 ._postcard--stamp {

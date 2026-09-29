@@ -53,6 +53,8 @@ export default {
     );
     this.$eventHub.$on(`app.notify_error`, this.notifyError);
 
+    // static routes (shared postcard) turn loading off before the app is initialized
+    this.$root.is_loading = true;
     await this.$api.init({ debug_mode: this.$root.debug_mode });
 
     this.$eventHub.$on("socketio.connect", this.socketConnected);

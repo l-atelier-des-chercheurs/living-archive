@@ -31,6 +31,8 @@ export default function () {
     watch: {},
     methods: {
       async init({ debug_mode }) {
+        // FullUI remounts when coming back from a static route: keep one socket
+        if (this.socket) return;
         this.debug_mode = debug_mode;
         await this.initSocketio();
         setTimeout(async () => {

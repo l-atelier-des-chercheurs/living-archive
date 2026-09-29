@@ -1,8 +1,8 @@
 <template>
   <div class="_siteBrand">
     <component
-      :is="link_component"
-      v-bind="link_attrs"
+      :is="link_home ? 'router-link' : 'div'"
+      v-bind="link_home ? { to: { name: 'Accueil' }, title: 'Back to home' } : {}"
       class="_siteBrand--names"
     >
       <SlashLogo class="_siteBrand--slashLogo" />
@@ -25,31 +25,9 @@ export default {
       type: Boolean,
       default: false,
     },
-    new_tab: {
-      type: Boolean,
-      default: false,
-    },
     title_tag: {
       type: String,
       default: "div",
-    },
-  },
-  computed: {
-    link_component() {
-      if (!this.link_home) return "div";
-      return this.new_tab ? "a" : "router-link";
-    },
-    link_attrs() {
-      if (!this.link_home) return {};
-      if (this.new_tab) {
-        return {
-          href: this.$router.resolve({ name: "Accueil" }).href,
-          target: "_blank",
-          rel: "noopener",
-          title: "Slash home",
-        };
-      }
-      return { to: { name: "Accueil" }, title: "Back to home" };
     },
   },
 };
