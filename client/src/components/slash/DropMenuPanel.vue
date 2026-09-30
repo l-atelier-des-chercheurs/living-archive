@@ -1,5 +1,8 @@
 <template>
-  <div class="_dropMenu--panelWrapper">
+  <div
+    class="_dropMenu--panelWrapper"
+    :class="{ 'is--stacked': stacked }"
+  >
     <div
       v-for="(row, index) in typeRows"
       :key="row.id"
@@ -71,6 +74,10 @@ export default {
     show_labels: {
       type: Boolean,
       default: true,
+    },
+    stacked: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {
@@ -171,6 +178,23 @@ export default {
   align-items: flex-end;
   gap: calc(var(--spacing) / 4);
   user-select: none;
+
+  &.is--stacked {
+    flex-flow: column nowrap;
+    align-items: stretch;
+    gap: calc(var(--spacing) / 1.25);
+
+    ._dropMenu--item {
+      width: 100%;
+    }
+
+    ._dropMenu--btn {
+      width: 100%;
+      justify-content: flex-start;
+      gap: calc(var(--spacing));
+      padding: calc(var(--spacing) * 1.1) calc(var(--spacing) * 1.25);
+    }
+  }
 }
 
 ._dropMenu--panel {

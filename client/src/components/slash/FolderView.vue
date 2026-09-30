@@ -80,6 +80,16 @@
             @update:shape_stroke_width="onShapeStrokeWidthUpdate"
           />
         </transition>
+
+        <button
+          v-if="show_contribute_fab"
+          type="button"
+          class="u-button _contributeFab"
+          @click="onContributeFabClick"
+        >
+          <b-icon icon="plus-lg" />
+          {{ $t("contribute") }}
+        </button>
       </div>
 
       <transition name="mediaListSidebarSlide">
@@ -94,6 +104,14 @@
         />
       </transition>
     </div>
+
+    <ContributeModal
+      v-if="show_contribute_modal"
+      :folder_title="folder_display_title"
+      :folder_path="folder_path"
+      :additional_meta="contribute_additional_meta"
+      @close="show_contribute_modal = false"
+    />
 
     <ItemModal
       v-if="opened_file"
@@ -125,6 +143,7 @@ import ItemModal from "@/components/slash/ItemModal.vue";
 import FolderSettingsModal from "@/components/slash/FolderSettingsModal.vue";
 import PublicationsSidebar from "@/components/slash/PublicationsSidebar.vue";
 import CanvasSelectionBar from "@/components/slash/CanvasSelectionBar.vue";
+import ContributeModal from "@/components/slash/ContributeModal.vue";
 import NotFound from "@/components/NotFound.vue";
 
 export default {
@@ -145,6 +164,7 @@ export default {
     FolderSettingsModal,
     PublicationsSidebar,
     CanvasSelectionBar,
+    ContributeModal,
     NotFound,
   },
   data() {
@@ -160,6 +180,7 @@ export default {
       zoom_range: [0.1, 1],
       show_folder_settings_modal: false,
       show_publications_sidebar: false,
+      show_contribute_modal: false,
       media_list_paths: [],
       selected_files: [],
       is_downloading_sources: false,
@@ -230,6 +251,17 @@ export default {
         } catch (error) {
           this.folder = null;
           this.folder_not_found = true;
+        }
+      },
+    },
+    contribute_modal_should_auto_open: {
+      immediate: true,
+      handler(should_open, was_open) {
+        if (should_open && !was_open) {
+          this.show_contribute_modal = true;
+        }
+        if (!should_open) {
+          this.show_contribute_modal = false;
         }
       },
     },
@@ -327,8 +359,48 @@ export default {
       const first = Number(shapes[0].shape_stroke_width);
       return Number.isFinite(first) && first > 0 ? first : 5;
     },
+    contribute_modal_should_auto_open() {
+      return (
+        this.$root.is_mobile_view &&
+        !!this.connected_as &&
+        this.can_contribute_current_folder &&
+        !!this.folder
+      );
+    },
+    show_contribute_fab() {
+      return (
+        this.$root.is_mobile_view &&
+        !!this.folder &&
+        !this.show_contribute_modal
+      );
+    },
+    contribute_additional_meta() {
+      if (!this.canvas_scroll) return {};
+      const base_width = 320;
+      const width = this.canvas_zoom
+        ? Math.round(base_width / this.canvas_zoom)
+        : base_width;
+      return {
+        x: this.canvas_scroll.topleft_x + 150,
+        y: this.canvas_scroll.topleft_y + 150,
+        width,
+      };
+    },
   },
   methods: {
+    onContributeFabClick() {
+      if (!this.connected_as) {
+        this.$eventHub.$emit("login.openModal");
+        return;
+      }
+      if (!this.can_contribute_current_folder) {
+        this.$alertify?.error(
+          this.$t("not_allowed_to_contribute_contact_referent")
+        );
+        return;
+      }
+      this.show_contribute_modal = true;
+    },
     isRoomJoined(room) {
       return Array.isArray(this.$api.rooms_joined)
         ? this.$api.rooms_joined.includes(room)
@@ -795,6 +867,31 @@ export default {
     color: white;
     background-color: var(--active-color);
     border-color: var(--active-color);
+  }
+}
+
+._contributeFab {
+  position: absolute;
+  bottom: var(--fixed-ui-margins);
+  left: 50%;
+  z-index: 900;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--spacing) / 2);
+  padding: calc(var(--spacing) / 1.25) calc(var(--spacing) * 1.25);
+  font-weight: 700;
+  color: var(--folder-accent);
+  background: var(--folder-fg);
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 4px 18px color-mix(in srgb, black 18%, transparent);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--folder-accent);
+    background: white;
+    transform: translateX(-50%) translateY(-1px);
   }
 }
 

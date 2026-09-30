@@ -41,6 +41,7 @@
             <FolderContributorsList v-if="folder" :folder="folder" />
           </div>
           <DropMenuPanel
+            v-if="!$root.is_mobile_view"
             :folder_path="folder_path"
             :additional_meta="additional_meta"
             :show_labels="false"

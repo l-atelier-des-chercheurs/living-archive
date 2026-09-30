@@ -19,6 +19,11 @@ export default {
   file: "File",
   integration: "Integration",
 
+  // Mobile contribute
+  contribute: "Contribute",
+  contribute_modal_lead: "Add a sound, a file, or a text to this space.",
+  untitled_folder: "Untitled folder",
+
   // TimelineView
   day_later: "{n} day later | {n} days later",
   week_later: "{n} week later | {n} weeks later",
