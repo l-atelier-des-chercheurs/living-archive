@@ -88,7 +88,20 @@
           </span>
         </button>
       </template>
-      <template v-else>
+      <a
+        class="_pcShare--item"
+        role="menuitem"
+        :href="whatsapp_href"
+        target="_blank"
+        rel="noopener"
+        @click="closeMenu"
+      >
+        <span class="_pcShare--icon is--whatsapp">
+          <b-icon icon="whatsapp" />
+        </span>
+        <span class="_pcShare--label">{{ $t("send_by_whatsapp") }}</span>
+      </a>
+      <template v-if="show_manual_send">
         <a
           class="_pcShare--item"
           role="menuitem"
@@ -195,6 +208,9 @@ export default {
     sms_href() {
       return "sms:?&body=" + encodeURIComponent(this.share_text);
     },
+    whatsapp_href() {
+      return "https://wa.me/?text=" + encodeURIComponent(this.share_text);
+    },
   },
   watch: {
     share_file: {
@@ -287,9 +303,7 @@ export default {
         this.native_share_failed = true;
         return;
       }
-      // navigator.share needs the click’s user activation: the file must
-      // already be rendered, no await before this call.
-      const data = { title: this.title, text: this.share_text };
+
       const files = this.share_file
         ? [
             this.share_file instanceof File
@@ -299,17 +313,39 @@ export default {
                 }),
           ]
         : null;
-      if (files && navigator.canShare && navigator.canShare({ files })) {
-        data.files = files;
-      } else if (this.share_url) {
-        data.url = this.share_url;
-      }
+
+      const shareLink = () => {
+        const data = { title: this.title || undefined };
+        if (this.share_url) data.url = this.share_url;
+        else if (this.share_text) data.text = this.share_text;
+        return navigator.share(data);
+      };
 
       try {
-        await navigator.share(data);
+        // Prefer image when the OS accepts it (WhatsApp, Instagram, Messages…)
+        // Do not also stuff the URL into text — some apps then drop the image.
+        if (files && navigator.canShare && navigator.canShare({ files })) {
+          await navigator.share({
+            files,
+            // caption / accompanying text — avoid duplicating as both text+url
+            text: this.share_url || this.title || undefined,
+          });
+        } else {
+          await shareLink();
+        }
         this.closeMenu();
       } catch (err) {
         if (err?.name === "AbortError") return;
+        // Retry without files: some targets reject image shares
+        if (files && this.share_url) {
+          try {
+            await shareLink();
+            this.closeMenu();
+            return;
+          } catch (err2) {
+            if (err2?.name === "AbortError") return;
+          }
+        }
         console.warn("Native share unavailable", err);
         this.native_share_failed = true;
       }
@@ -505,6 +541,11 @@ export default {
 
 ._pcShare--icon.is--sms {
   background: #34c759;
+  color: #fff;
+}
+
+._pcShare--icon.is--whatsapp {
+  background: #25d366;
   color: #fff;
 }
 

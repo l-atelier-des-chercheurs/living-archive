@@ -64,8 +64,9 @@ export default {
   download_as_image: "Download as image",
   download_4_on_a4: "Download 4 on A4 page",
   send_card: "Send…",
-  send_card_hint: "Mail, messages, AirDrop…",
+  send_card_hint: "WhatsApp, Instagram, Mail…",
   send_by_sms: "SMS",
+  send_by_whatsapp: "WhatsApp",
   share_copy_link: "Copy link",
   share_link_copied: "Link copied",
 
