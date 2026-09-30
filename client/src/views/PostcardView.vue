@@ -26,7 +26,7 @@
     </header>
 
     <header v-else class="_postcard--shareHeader">
-      <SiteBrand :link_home="true" />
+      <SiteBrand :link_home="true" :compact="true" />
     </header>
 
     <div
@@ -1841,26 +1841,7 @@ export default {
   min-height: 100dvh;
   margin: 0;
   padding: 1.25rem clamp(1rem, 4vw, 2rem) 2rem;
-  background-color: #fff;
-  background-image:
-    linear-gradient(
-      115deg,
-      transparent 0%,
-      transparent 46%,
-      color-mix(in srgb, var(--c-slash-mint) 55%, transparent) 46%,
-      color-mix(in srgb, var(--c-slash-mint) 55%, transparent) 54%,
-      transparent 54%
-    ),
-    radial-gradient(
-      ellipse at 0% 0%,
-      color-mix(in srgb, var(--c-slash-blue) 14%, transparent),
-      transparent 42%
-    ),
-    radial-gradient(
-      ellipse at 100% 10%,
-      color-mix(in srgb, var(--c-slash-orange) 12%, transparent),
-      transparent 38%
-    );
+  background: #fff;
   color: var(--pc-ink);
   font-family: var(--pc-font);
   max-width: 100vw;
@@ -2067,9 +2048,19 @@ export default {
 ._postcard--shareHeader {
   --site-brand-color: var(--c-slash-burgundy);
   width: 100%;
-  margin: 0 0 calc(var(--spacing) * 1.5);
-  padding: calc(var(--spacing)) 0;
+  margin: 0 0 0.75rem;
+  padding: 0;
   flex-shrink: 0;
+}
+
+._postcard--shareHeader ._siteBrand.is--compact ._siteBrand--slashLogo {
+  width: 2.25rem;
+}
+
+._postcard--shareHeader ._siteBrand.is--compact ._siteBrand--title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 ._postcard--shareActions {

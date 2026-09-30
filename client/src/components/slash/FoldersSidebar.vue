@@ -733,7 +733,6 @@ export default {
   &:hover:not(.is--disabled),
   &:focus-visible:not(.is--disabled) {
     transform: translateY(-4px);
-    border-color: var(--folders-accent);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
   }
 
@@ -758,7 +757,6 @@ export default {
     &:hover,
     &:focus-visible {
       border-color: var(--folders-fg);
-      background: color-mix(in srgb, var(--folders-fg) 12%, transparent);
       box-shadow: none;
     }
   }

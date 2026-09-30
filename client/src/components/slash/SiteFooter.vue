@@ -90,6 +90,9 @@
         <a :href="site_info.source_url" target="_blank" rel="noopener"
           >AGPL-3.0</a
         >
+        <span v-if="app_version" class="_siteFooter--version"
+          >· v{{ app_version }}</span
+        >
       </p>
     </div>
   </footer>
@@ -113,6 +116,9 @@ export default {
   computed: {
     current_year() {
       return new Date().getFullYear();
+    },
+    app_version() {
+      return this.$root.app_infos?.version || "";
     },
   },
 };
@@ -218,5 +224,10 @@ export default {
   font-size: var(--sl-font-size-x-small);
   line-height: 1.45;
   color: color-mix(in srgb, var(--footer-fg) 75%, transparent);
+}
+
+._siteFooter--version {
+  margin-left: 0.35rem;
+  color: color-mix(in srgb, var(--footer-fg) 45%, transparent);
 }
 </style>
