@@ -42,7 +42,7 @@
         <div class="_foldersPanel--brand">
           <SlashLogo class="_foldersPanel--logo" />
           <div>
-            <h1 class="_foldersPanel--title">Living archive</h1>
+            <h1 class="_foldersPanel--title">Living Archive</h1>
             <p class="_foldersPanel--subtitle">Pick a folder to open it</p>
           </div>
         </div>
@@ -70,7 +70,7 @@
           :href="site_info.living_archive_url"
           target="_blank"
           rel="noopener"
-          >About living archive →</a
+          >About Living Archive →</a
         >
         <a
           class="_foldersPanel--introLink"

@@ -7,7 +7,7 @@
     >
       <SlashLogo class="_siteBrand--slashLogo" />
       <component :is="title_tag" class="_siteBrand--title">
-        Living archive
+        Living Archive
       </component>
     </component>
   </div>
