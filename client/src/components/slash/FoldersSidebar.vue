@@ -123,16 +123,15 @@
         v-if="!is_overlay && !needs_general_password"
         class="_foldersPanel--section"
       >
-        <h2 class="_foldersPanel--sectionTitle">Publication</h2>
+        <h2 class="_foldersPanel--sectionTitle">Publications</h2>
         <div class="_foldersPanel--grid">
           <button
             type="button"
-            class="_foldersPanel--card is--create"
+            class="_foldersPanel--card is--create is--createPostcard"
+            title="Create a postcard"
+            aria-label="Create a postcard"
             @click="startCreatePublication('postcard')"
           >
-            <span class="_foldersPanel--cardTitle is--flag is--small"
-              >Create a postcard</span
-            >
             <div class="_foldersPanel--pcSchema" aria-hidden="true">
               <span class="_foldersPanel--pcImage">
                 <b-icon icon="plus-lg" />
@@ -511,9 +510,7 @@ export default {
       this.create_allow_save = true;
       this.create_error = "";
       this.$nextTick(() => {
-        this.$refs.createTitleInput?.$el
-          ?.querySelector?.("input")
-          ?.select?.();
+        this.$refs.createTitleInput?.$el?.querySelector?.("input")?.select?.();
       });
     },
     closeCreateModal() {
@@ -523,7 +520,11 @@ export default {
       this.create_allow_save = false;
     },
     async confirmCreate() {
-      if (!this.create_allow_save || this.is_creating || !this.create_template) {
+      if (
+        !this.create_allow_save ||
+        this.is_creating ||
+        !this.create_template
+      ) {
         return;
       }
       this.is_creating = true;
@@ -819,12 +820,12 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   gap: calc(var(--spacing) / 1);
-  min-height: 190px;
+  min-height: 100px;
   padding: calc(var(--spacing) * 1.25);
   text-align: left;
   color: var(--folders-accent);
-  background: var(--folders-fg);
-  border: 2px solid var(--folders-fg);
+  background: white;
+  border: 2px solid white;
   border-radius: calc(var(--border-radius) * 1.5);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   cursor: pointer;
@@ -861,6 +862,23 @@ export default {
     &:focus-visible {
       border-color: var(--folders-fg);
       box-shadow: none;
+    }
+  }
+
+  &.is--createPostcard {
+    padding: 0;
+    gap: 0;
+    min-height: 0;
+    aspect-ratio: 148 / 105;
+    overflow: hidden;
+
+    ._foldersPanel--pcSchema {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      aspect-ratio: auto;
+      border: none;
+      border-radius: 0;
     }
   }
 
@@ -917,7 +935,7 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 100%;
-  max-width: 13rem;
+  // max-width: 13rem;
   aspect-ratio: 148 / 105;
   margin-top: auto;
   border: 2px solid currentColor;
@@ -955,7 +973,9 @@ export default {
   opacity: 0.6;
 }
 
-._foldersPanel--card.is--create ._foldersPanel--cardTitle.is--flag ~ ._foldersPanel--cardIcon {
+._foldersPanel--card.is--create
+  ._foldersPanel--cardTitle.is--flag
+  ~ ._foldersPanel--cardIcon {
   margin-top: auto;
 }
 
