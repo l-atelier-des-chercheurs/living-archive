@@ -92,6 +92,11 @@ export default {
       );
     },
     route_view_key() {
+      // Accueil and Folder share SlashHomeView — keep one instance so folder
+      // open/close is driven by the route instead of a full remount.
+      if (this.$route.name === "Accueil" || this.$route.name === "Folder") {
+        return "home";
+      }
       return (
         this.$route.name ||
         (this.$route.matched[0] && this.$route.matched[0].path) ||

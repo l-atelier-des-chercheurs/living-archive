@@ -111,6 +111,10 @@ export default {
         this.current_folder_path = `${this.folders_path}/${folder_slug_from_route}`;
       } else {
         this.current_folder_path = "";
+        // Drop leftover view/file query that can stick on Accueil after a failed /f/ nav
+        if (Object.keys(this.$route.query || {}).length) {
+          await this.$router.replace({ name: "Accueil", query: {} });
+        }
         await this.toggleFoldersSidebar(true);
       }
     },
@@ -205,16 +209,21 @@ export default {
         return;
       }
 
-      this.current_folder_path = folder_path;
-
       const folder_slug = this.getFolderSlug(folder_path);
       const router_method = replace ? "replace" : "push";
-      this.$router[router_method]({
-        name: "Folder",
-        params: { folder_slug },
-        query: this.buildFolderRouteQuery(folder_path),
-      });
+      // Navigate first. Setting current_folder_path before the route change
+      // mounts FolderView on Accueil, and its view-mode URL replace aborts /f/...
+      try {
+        await this.$router[router_method]({
+          name: "Folder",
+          params: { folder_slug },
+          query: this.buildFolderRouteQuery(folder_path),
+        });
+      } catch (err) {
+        if (err?.name !== "NavigationDuplicated") throw err;
+      }
 
+      this.current_folder_path = folder_path;
       this.closeFoldersSidebar();
     },
     async openNewFolder(new_folder_slug) {

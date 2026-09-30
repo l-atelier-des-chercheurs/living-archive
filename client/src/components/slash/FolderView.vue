@@ -407,13 +407,19 @@ export default {
       return ["canvas", "map", "grid", "timeline"].includes(mode);
     },
     updateUrlViewMode(mode) {
+      // Never rewrite Accueil (/) — that aborts navigation to /f/:folder_slug
+      if (this.$route.name !== "Folder") return;
       // Use replace to avoid cluttering browser history with view mode changes
-      this.$router.replace({
-        query: {
-          ...this.$route.query,
-          view: mode,
-        },
-      });
+      this.$router
+        .replace({
+          name: "Folder",
+          params: { folder_slug: this.$route.params.folder_slug },
+          query: {
+            ...this.$route.query,
+            view: mode,
+          },
+        })
+        .catch(() => {});
     },
     async switchViewMode(newMode) {
       if (this.view_mode === newMode) return;
