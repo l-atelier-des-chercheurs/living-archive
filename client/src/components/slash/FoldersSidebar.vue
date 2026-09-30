@@ -135,9 +135,11 @@
                 :resolution="320"
                 context="preview"
               />
-              <span class="_foldersPanel--pubName">{{
-                pub.title || pub.$path.split("/").pop()
-              }}</span>
+              <span
+                class="_foldersPanel--pubName"
+                :class="{ 'is--caption': pub.template === 'postcard' }"
+                >{{ pub.title || pub.$path.split("/").pop() }}</span
+              >
             </div>
           </div>
         </div>
@@ -897,6 +899,20 @@ export default {
   word-break: break-word;
   pointer-events: none;
   transition: opacity 0.2s ease;
+
+  &.is--caption {
+    left: 0.55rem;
+    top: auto;
+    bottom: 0.55rem;
+    transform: none;
+    max-width: calc(100% - 1.1rem);
+    padding: 0.2rem 0.45rem;
+    background: rgba(255, 255, 255, 0.88);
+    color: #1a1a1a;
+    font-size: var(--sl-font-size-small);
+    font-weight: 600;
+    text-align: left;
+  }
 }
 
 ._foldersPanel--cardContributors {
