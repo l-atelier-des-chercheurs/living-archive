@@ -7,7 +7,6 @@
       aria-labelledby="login-gate-title"
     >
       <button
-        v-if="is_logged_in"
         type="button"
         class="u-button u-button_icon _gateScreen--close"
         :title="$t('close')"

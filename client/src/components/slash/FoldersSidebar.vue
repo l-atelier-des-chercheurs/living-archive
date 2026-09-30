@@ -3,6 +3,40 @@
     <div class="_foldersPanel--inner">
       <header v-if="!is_overlay" class="_foldersPanel--siteHeader">
         <SiteBrand title_tag="h1" />
+        <div v-if="!needs_general_password" class="_foldersPanel--auth">
+          <template v-if="connected_as">
+            <button
+              key="home-auth-user"
+              type="button"
+              class="u-button u-button_transparent _foldersPanel--authUser"
+              :title="$t('login')"
+              @click="openLoginModal"
+            >
+              <span
+                class="_foldersPanel--authColor"
+                :style="{ backgroundColor: connected_as.color }"
+              />
+              {{ connected_as.name }}
+            </button>
+            <button
+              key="home-auth-logout"
+              type="button"
+              class="u-button u-button_transparent _foldersPanel--authAction"
+              @click="logout"
+            >
+              {{ $t("logout") }}
+            </button>
+          </template>
+          <button
+            v-else
+            key="home-auth-login"
+            type="button"
+            class="u-button _foldersPanel--authLogin"
+            @click="openLoginModal"
+          >
+            {{ $t("login") }}
+          </button>
+        </div>
       </header>
       <header v-else class="_foldersPanel--header">
         <div class="_foldersPanel--brand">
@@ -454,6 +488,15 @@ export default {
       this.show_create_folder_modal = false;
       this.$emit("openNewFolder", new_folder_slug);
     },
+    openLoginModal() {
+      this.$eventHub.$emit("login.openModal");
+    },
+    async logout() {
+      if (this.$api.tokenpath?.token_path) {
+        await this.$api.logoutFromFolder();
+      }
+      this.$alertify.success(this.$t("logout"));
+    },
     startCreatePublication(template_key) {
       if (!this.connected_as) {
         this.$eventHub.$emit("login.openModal");
@@ -578,7 +621,57 @@ export default {
 }
 
 ._foldersPanel--siteHeader {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(var(--spacing));
   padding: calc(var(--spacing)) 0;
+}
+
+._foldersPanel--auth {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(var(--spacing) / 2);
+  padding-top: calc(var(--spacing) / 4);
+}
+
+._foldersPanel--authUser {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--spacing) / 2);
+  color: var(--folders-fg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+._foldersPanel--authColor {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+._foldersPanel--authAction {
+  color: color-mix(in srgb, var(--folders-fg) 80%, transparent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+._foldersPanel--authLogin {
+  background: var(--folders-fg);
+  color: var(--folders-accent);
+  font-weight: 600;
+  padding: calc(var(--spacing) / 2) calc(var(--spacing) * 1.25);
+
+  &:hover,
+  &:focus-visible {
+    background: white;
+    color: var(--folders-accent);
+  }
 }
 
 ._foldersPanel--logo {

@@ -2053,16 +2053,6 @@ export default {
   flex-shrink: 0;
 }
 
-._postcard--shareHeader ._siteBrand.is--compact ._siteBrand--slashLogo {
-  width: 2.25rem;
-}
-
-._postcard--shareHeader ._siteBrand.is--compact ._siteBrand--title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
 ._postcard--shareActions {
   position: fixed;
   left: 0;

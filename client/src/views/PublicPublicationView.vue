@@ -20,7 +20,7 @@
       :class="{ 'is--export': is_export }"
     >
       <header v-if="!is_export" class="_consult--header">
-        <SiteBrand :link_home="true" />
+        <SiteBrand :link_home="true" :compact="true" />
       </header>
 
       <div class="_consult--body">
