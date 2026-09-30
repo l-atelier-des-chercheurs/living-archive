@@ -1,19 +1,19 @@
 {
-  "name": "slash",
-  "productName": "Slash",
+  "name": "living-archive",
+  "productName": "Living Archive",
   "version": "0.2.28",
   "description": "",
   "author": "L’Atelier des Chercheurs <https://latelier-des-chercheurs.fr/>",
-  "homepage": "https://github.com/l-atelier-des-chercheurs/slash#readme",
+  "homepage": "https://github.com/l-atelier-des-chercheurs/living-archive#readme",
   "license": "AGPL-3.0-only",
   "main": "index.js",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/l-atelier-des-chercheurs/slash.git"
+    "url": "https://github.com/l-atelier-des-chercheurs/living-archive.git"
   },
   "bugs": {
-    "url": "https://github.com/l-atelier-des-chercheurs/slash/issues"
+    "url": "https://github.com/l-atelier-des-chercheurs/living-archive/issues"
   },
   "scripts": {
     "start": "node .",
