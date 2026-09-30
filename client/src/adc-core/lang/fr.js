@@ -167,6 +167,7 @@ export default {
 
   login: "Se Connecter",
   logout: "se déconnecter",
+  logging_in: "Connexion en cours…",
   logging_out: "Déconnexion en cours…",
   name_or_pseudonym: "Nom ou pseudonyme",
   email: "Courriel",
@@ -1446,6 +1447,8 @@ export default {
   items_in_bin: "Éléments dans la corbeille",
   bin_removal_notice:
     "Les éléments dans la corbeille sont automatiquement supprimés après 30 jours.",
+  versions_removal_notice:
+    "Les versions précédentes sont automatiquement supprimées après 30 jours.",
   restore: "Restaurer",
   remove_for_good: "Supprimer définitivement",
   bin_is_empty: "La corbeille est vide",

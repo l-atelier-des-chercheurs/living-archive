@@ -246,7 +246,6 @@ module.exports = (function () {
         }).catch((err) => {
           if (err.message !== "content_not_changed") throw new Error(err);
         });
-        // TODO remove thumbs
       }
 
       meta.$date_modified = utils.getCurrentDate();
@@ -444,6 +443,7 @@ module.exports = (function () {
       );
       await fs.copy(full_path_to_file, destination_path);
 
+      // Exports are new artifacts: creation date is now (not the source media's).
       additional_meta.$date_created = +new Date();
 
       const item_in_schema = utils.parseAndCheckSchema({
@@ -608,12 +608,13 @@ module.exports = (function () {
     let new_meta = {};
 
     // set date created (see readme)
-    if (additional_meta.$date_created)
-      new_meta.$date_created = utils.parseDate(additional_meta.$date_created);
-    else {
-      // TODO fs stat ?
-      // await fs.stat(filepath);
-    }
+    // Priority: explicit $date_created (e.g. crop/blur preserve) >
+    // embedded metadata > browser lastModified > fs times > now
+    new_meta.$date_created = await utils.resolveFileCreationDate({
+      path_to_media,
+      explicit_date: additional_meta.$date_created,
+      client_last_modified: additional_meta.$client_file_last_modified,
+    });
 
     // set date uploaded (see readme)
     new_meta.$date_uploaded = new_meta.$date_modified = utils.getCurrentDate();

@@ -142,6 +142,7 @@
 import DuplicatePublication from "@/components/publications/DuplicatePublication.vue";
 import ExportPubliModal from "@/components/publications/ExportPubliModal.vue";
 import SharePublication from "@/components/publications/SharePublication.vue";
+import { resolveAppPublicOrigin } from "@/utils/app_public_url.js";
 
 export default {
   props: {
@@ -173,15 +174,16 @@ export default {
         query = { display: "slides" };
       else if (this.publication.template === "story_with_sections")
         query = { display: "section" };
-      else if (this.publication.template === "cartography")
-        query = { display: "section" };
+      else if (this.publication.template === "cartography") {
+        if (this.pane_infos?.view) query = { view: this.pane_infos.view };
+      }
 
       const route = this.$router.resolve({
         path: this.createURLFromPath(this.publication.$path),
         query,
       });
 
-      return window.location.origin + route.href;
+      return resolveAppPublicOrigin() + route.href;
     },
   },
   methods: {

@@ -144,6 +144,7 @@ export default {
 
   login: "Login",
   logout: "Logout",
+  logging_in: "Logging in…",
   logging_out: "Logging out…",
   name_or_pseudonym: "Name or nickname",
   email: "Email",
@@ -1364,6 +1365,8 @@ export default {
   items_in_bin: "Items in the trash",
   bin_removal_notice:
     "Items in the trash are automatically removed after 30 days.",
+  versions_removal_notice:
+    "Previous versions are automatically removed after 30 days.",
   all_pages: "All pages",
   all_spreads: "All spreads",
   spreads_to_export: "Spreads to export",

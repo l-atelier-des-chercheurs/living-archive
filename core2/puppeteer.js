@@ -3,8 +3,126 @@ const puppeteer = require("puppeteer");
 const utils = require("./utils");
 
 const READY_FOR_EXPORT_EVENT = "READY_FOR_EXPORT";
-const READY_WAIT_MS = 15_000;
+// Screenshots / thumbs: short fallback when no ready signal.
+const CAPTURE_READY_WAIT_MS = 8_000;
+// PDF/PNG export: edition (paged.js) and heavy pubs need longer than 8s.
+const EXPORT_READY_WAIT_MS = 30_000;
 const READY_SETTLE_MS = 400;
+// Drop the shared Chrome once captures stop, so each app does not keep
+// a few hundred MB resident on a multi-app server.
+const BROWSER_IDLE_MS = 60_000;
+
+const BROWSER_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--font-render-hinting=none",
+  "--ignore-certificate-errors",
+];
+
+let shared_browser = null;
+let browser_launch_promise = null;
+let browser_close_promise = null;
+let idle_close_timer = null;
+let active_browser_jobs = 0;
+
+function cancelIdleClose() {
+  if (!idle_close_timer) return;
+  clearTimeout(idle_close_timer);
+  idle_close_timer = null;
+}
+
+function scheduleIdleClose() {
+  cancelIdleClose();
+  if (active_browser_jobs > 0) return;
+  idle_close_timer = setTimeout(() => {
+    idle_close_timer = null;
+    if (active_browser_jobs > 0) return;
+    closeSharedBrowser().catch((err) => {
+      dev.error("Failed to close idle Puppeteer browser:", err);
+    });
+  }, BROWSER_IDLE_MS);
+  if (typeof idle_close_timer.unref === "function") {
+    idle_close_timer.unref();
+  }
+}
+
+function beginBrowserJob() {
+  cancelIdleClose();
+  active_browser_jobs += 1;
+}
+
+function endBrowserJob() {
+  active_browser_jobs = Math.max(0, active_browser_jobs - 1);
+  if (active_browser_jobs === 0) scheduleIdleClose();
+}
+
+function getLaunchOptions() {
+  const options = {
+    headless: true,
+    ignoreHTTPSErrors: true,
+    args: BROWSER_ARGS,
+  };
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    options.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  return options;
+}
+
+async function acquireBrowser() {
+  cancelIdleClose();
+  if (browser_close_promise) {
+    await browser_close_promise.catch(() => {});
+  }
+  if (shared_browser && shared_browser.isConnected()) {
+    return shared_browser;
+  }
+  if (browser_launch_promise) {
+    return browser_launch_promise;
+  }
+  browser_launch_promise = puppeteer
+    .launch(getLaunchOptions())
+    .then((browser) => {
+      shared_browser = browser;
+      browser_launch_promise = null;
+      browser.on("disconnected", () => {
+        if (shared_browser === browser) shared_browser = null;
+      });
+      return browser;
+    })
+    .catch((err) => {
+      browser_launch_promise = null;
+      throw err;
+    });
+  return browser_launch_promise;
+}
+
+async function closeSharedBrowser() {
+  cancelIdleClose();
+  if (browser_close_promise) return browser_close_promise;
+
+  browser_close_promise = (async () => {
+    if (browser_launch_promise) {
+      await browser_launch_promise.catch(() => {});
+    }
+    const browser = shared_browser;
+    shared_browser = null;
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  })().finally(() => {
+    browser_close_promise = null;
+  });
+
+  return browser_close_promise;
+}
+
+async function closePage(page) {
+  if (page && !page.isClosed()) {
+    await page.close().catch(() => {});
+  }
+}
 
 /**
  * Register before navigation: listen for READY_FOR_EXPORT with detail.ready === true.
@@ -25,10 +143,29 @@ async function installReadyForExportListener(page) {
   }, READY_FOR_EXPORT_EVENT);
 }
 
+async function configurePageForCapture(page) {
+  await installReadyForExportListener(page);
+}
+
+async function configurePageForExport(page) {
+  await installReadyForExportListener(page);
+  await page.setRequestInterception(true);
+  page.on("request", (request) => {
+    if (request.resourceType() === "websocket") {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+}
+
 /**
- * Wait for the first ready event or READY_WAIT_MS, then READY_SETTLE_MS.
+ * Wait for the first ready event or timeout_ms, then READY_SETTLE_MS.
  */
-async function waitForReadyForExportOrTimeout(page) {
+async function waitForReadyForExportOrTimeout(
+  page,
+  timeout_ms = EXPORT_READY_WAIT_MS
+) {
   const start = Date.now();
   try {
     await Promise.race([
@@ -36,48 +173,43 @@ async function waitForReadyForExportOrTimeout(page) {
         const p = window.__ready_for_export_promise;
         return p ? p : new Promise(() => {});
       }),
-      new Promise((r) => setTimeout(r, READY_WAIT_MS)),
+      new Promise((r) => setTimeout(r, timeout_ms)),
     ]);
   } catch (err) {
     /* navigation / context gone */
   }
   const elapsed = Date.now() - start;
-  if (elapsed < READY_WAIT_MS) {
-    console.log("ready signal received after " + elapsed + "ms");
+  if (elapsed < timeout_ms) {
+    dev.logverbose(`ready signal received after ${elapsed}ms`);
+  } else {
+    dev.logverbose(`ready signal timed out after ${timeout_ms}ms`);
   }
   await new Promise((r) => setTimeout(r, READY_SETTLE_MS));
 }
 
 module.exports = (function () {
   return {
-    captureScreenshot: async ({ url, full_path_to_thumb }) => {
-      let browser;
+    closeSharedBrowser,
 
-      let page_timeout = setTimeout(async () => {
-        if (browser) await browser.close();
-        const err = new Error("Failed to capture screenshot");
-        err.code = "timeout";
-        throw err;
+    captureScreenshot: async ({ url, full_path_to_thumb }) => {
+      beginBrowserJob();
+      let page;
+      // Must not throw: an async timer rejection is unhandled and exits the app.
+      // Closing the page makes the pending capture reject into the catch below.
+      let page_timeout = setTimeout(() => {
+        dev.error(`screenshot timeout for ${url}`);
+        closePage(page);
       }, 20_000);
 
       try {
-        browser = await puppeteer.launch({
-          headless: true,
-          ignoreHTTPSErrors: true,
-          args: [
-            "--no-sandbox",
-            "--font-render-hinting=none",
-            "--ignore-certificate-errors",
-          ],
-        });
-
-        const page = await browser.newPage();
+        const browser = await acquireBrowser();
+        page = await browser.newPage();
         const x_padding = 12;
         const y_padding = 8;
         const width = 800;
         const height = 800;
 
-        await installReadyForExportListener(page);
+        await configurePageForCapture(page);
 
         await page.setUserAgent("facebookexternalhit/1.1");
         await page.setViewport({
@@ -98,9 +230,9 @@ module.exports = (function () {
           });
 
         dev.logverbose(
-          `Waiting for ${READY_FOR_EXPORT_EVENT} or ${READY_WAIT_MS}ms`
+          `Waiting for ${READY_FOR_EXPORT_EVENT} or ${CAPTURE_READY_WAIT_MS}ms`
         );
-        await waitForReadyForExportOrTimeout(page);
+        await waitForReadyForExportOrTimeout(page, CAPTURE_READY_WAIT_MS);
 
         dev.logverbose(`Taking screenshot`);
         await page.screenshot({
@@ -115,13 +247,16 @@ module.exports = (function () {
         dev.logverbose(`Screenshot taken`);
         await new Promise((resolve) => setTimeout(resolve, 200));
         clearTimeout(page_timeout);
-        if (browser) await browser.close();
+        await closePage(page);
       } catch (err) {
         clearTimeout(page_timeout);
-        if (browser) await browser.close();
+        await closePage(page);
         throw err;
+      } finally {
+        endBrowserJob();
       }
     },
+
     exportToPDFOrImage: async ({
       url,
       recipe,
@@ -130,60 +265,52 @@ module.exports = (function () {
       printToPDF_pagesize,
       reportProgress,
     }) => {
+      beginBrowserJob();
       if (reportProgress) reportProgress(0);
 
-      let browser;
+      let page;
 
-      let page_timeout = setTimeout(async () => {
+      // Must not throw: an async timer rejection is unhandled and exits the app.
+      // Closing the page makes the pending export reject into the catch below.
+      let page_timeout = setTimeout(() => {
         dev.error(`page timeout for ${url}`);
-        clearTimeout(page_timeout);
-        if (browser) await browser.close();
-        const err = new Error("Failed to capture media screenshot");
-        err.code = "failed_to_capture_media_screenshot_page-timeout";
-        throw err;
+        page_timeout = null;
+        closePage(page);
       }, 120_000);
 
-      let stopTimeoutAndCloseBrowser = async () => {
+      let stopTimeoutAndClosePage = async () => {
         if (page_timeout) {
           clearTimeout(page_timeout);
           page_timeout = null;
         }
-        if (browser) {
-          dev.logverbose(`closing browser`);
-          await browser.close();
-        }
+        await closePage(page);
       };
 
       try {
         if (reportProgress) reportProgress(5);
 
-        browser = await puppeteer.launch({
-          headless: true,
-          ignoreHTTPSErrors: true,
-          args: [
-            "--no-sandbox",
-            "--font-render-hinting=none",
-            "--ignore-certificate-errors",
-          ],
-        });
+        const browser = await acquireBrowser();
+        page = await browser.newPage();
 
         if (reportProgress) reportProgress(10);
 
-        const page = await browser.newPage();
+        await configurePageForExport(page);
 
-        await installReadyForExportListener(page);
-
+        const device_scale_factor = recipe === "pdf" ? 1 : 2;
         await page.setViewport({
           width: bw_pagesize.width,
           height: bw_pagesize.height,
-          deviceScaleFactor: 2,
+          deviceScaleFactor: device_scale_factor,
         });
 
         if (reportProgress) reportProgress(30);
 
         await page
           .goto(url, {
+            // Keep networkidle0 for export: edition/paged.js needs assets
+            // loaded before layout; "load" alone was too early.
             waitUntil: "networkidle0",
+            timeout: 120_000,
           })
           .catch((err) => {
             throw err;
@@ -192,11 +319,11 @@ module.exports = (function () {
         if (reportProgress) reportProgress(45);
 
         dev.logverbose(
-          `Waiting for ${READY_FOR_EXPORT_EVENT} or ${READY_WAIT_MS}ms (export)`
+          `Waiting for ${READY_FOR_EXPORT_EVENT} or ${EXPORT_READY_WAIT_MS}ms (export)`
         );
-        await waitForReadyForExportOrTimeout(page);
+        await waitForReadyForExportOrTimeout(page, EXPORT_READY_WAIT_MS);
 
-        page.emulateMediaType("print");
+        await page.emulateMediaType("print");
 
         if (reportProgress) reportProgress(70);
 
@@ -235,12 +362,14 @@ module.exports = (function () {
         }
 
         if (reportProgress) reportProgress(100);
-        await stopTimeoutAndCloseBrowser();
+        await stopTimeoutAndClosePage();
 
         return path_to_temp_file;
       } catch (err) {
-        await stopTimeoutAndCloseBrowser();
+        await stopTimeoutAndClosePage();
         throw err;
+      } finally {
+        endBrowserJob();
       }
     },
   };
