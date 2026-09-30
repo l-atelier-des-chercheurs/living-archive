@@ -16,7 +16,7 @@
           :path="atpath"
           :key="atpath"
           :show_image_only="true"
-          :mode="'link'"
+          :mode="link_authors ? 'link' : ''"
         />
         <button
           type="button"
@@ -83,6 +83,10 @@ export default {
     admin_instructions: String,
     contrib_instructions: String,
     show_label: {
+      type: Boolean,
+      default: true,
+    },
+    link_authors: {
       type: Boolean,
       default: true,
     },

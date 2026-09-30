@@ -33,6 +33,13 @@
         </p>
         <a
           class="_foldersPanel--introLink"
+          :href="site_info.living_archive_url"
+          target="_blank"
+          rel="noopener"
+          >About living archive →</a
+        >
+        <a
+          class="_foldersPanel--introLink"
           :href="site_info.platform_url"
           target="_blank"
           rel="noopener"
@@ -180,11 +187,12 @@
               folder.title || folder.$path.split("/").pop()
             }}</span>
 
-            <div class="_foldersPanel--cardContributors" @click.stop>
+            <div class="_foldersPanel--cardContributors">
               <AdminsAndContributorsField
                 :folder="folder"
                 :can_edit="false"
                 :show_label="false"
+                :link_authors="false"
               />
             </div>
 
@@ -918,6 +926,7 @@ export default {
 ._foldersPanel--cardContributors {
   width: 100%;
   margin-top: auto;
+  pointer-events: none;
 
   ::v-deep ._adminsAndContributorsField {
     margin: 0;

@@ -1,5 +1,7 @@
 export default {
   platform_url: "https://slash-platform.eu/",
+  living_archive_url:
+    "https://slash.dodoc.fr/+peda-vs-research-slash/lisbon-collabla-oct-26/publications/workshop-du-jeudi-copy-copy?display=slides&page=26",
   instagram_url: "https://www.instagram.com/slash_platform/",
   all_partners_url: "https://slash-platform.eu/slash-transition/transition-partners/",
   source_url: "https://github.com/l-atelier-des-chercheurs/slash",
