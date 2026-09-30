@@ -56,17 +56,6 @@
           @select="handleItemSelect"
         />
 
-        <button
-          type="button"
-          class="u-button u-button_icon _publicationsToggle u-overlayPanel"
-          :class="{ 'is--active': show_publications_sidebar }"
-          :title="$t('publications')"
-          :aria-label="$t('publications')"
-          @click="togglePublicationsSidebar"
-        >
-          <b-icon icon="layout-wtf" />
-        </button>
-
         <transition name="fade">
           <CanvasSelectionBar
             v-if="show_selection_bar"
@@ -836,38 +825,6 @@ export default {
   min-height: 0;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-._publicationsToggle {
-  position: absolute;
-  bottom: var(--fixed-ui-margins);
-  right: var(--fixed-ui-margins);
-  z-index: 900;
-  padding: calc(var(--spacing) / 1.5);
-  color: var(--folder-accent);
-  transition: color 0.2s cubic-bezier(0.19, 1, 0.22, 1),
-    background-color 0.2s cubic-bezier(0.19, 1, 0.22, 1),
-    border-color 0.2s cubic-bezier(0.19, 1, 0.22, 1),
-    transform 0.2s cubic-bezier(0.19, 1, 0.22, 1);
-
-  ::v-deep .b-icon.bi {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-
-  &:hover,
-  &:focus-visible {
-    color: var(--folder-accent);
-    background-color: var(--folder-fg);
-    border-color: var(--folder-accent);
-    transform: translateY(-1px);
-  }
-
-  &.is--active {
-    color: white;
-    background-color: var(--active-color);
-    border-color: var(--active-color);
-  }
 }
 
 ._contributeFab {
