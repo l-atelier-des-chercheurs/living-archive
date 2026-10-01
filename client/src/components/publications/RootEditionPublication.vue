@@ -39,25 +39,49 @@
           <b-icon icon="gear" :aria-label="$t('settings')" />
           {{ $t("settings") }}
         </button>
-        <a
-          v-if="public_url"
-          class="u-buttonLink"
-          :href="public_url"
-          target="_blank"
-          rel="noopener"
-        >
-          <b-icon icon="box-arrow-up-right" />
-          {{ $t("public_view") }}
-        </a>
-        <button
-          v-if="can_edit"
-          type="button"
-          class="u-buttonLink"
-          @click="show_export_pdf_modal = true"
-        >
-          <b-icon icon="save2-fill" />
-          {{ $t("export") }}
-        </button>
+        <DropDown :right="true">
+          <template slot="trigger">
+            <b-icon icon="box-arrow-up-right" />
+            {{ $t("share") }}
+          </template>
+          <div v-if="can_edit">
+            <button
+              type="button"
+              class="u-buttonLink"
+              @click="show_export_pdf_modal = true"
+            >
+              <b-icon icon="save2-fill" />
+              {{ $t("export") }}
+            </button>
+          </div>
+          <div v-if="share_url">
+            <button
+              type="button"
+              class="u-buttonLink"
+              @click="show_qr_code_modal = true"
+            >
+              <div part="base" class="icon" aria-hidden="true">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-qr-code"
+                  viewBox="0 0 16 16"
+                >
+                  <path d="M2 2h2v2H2V2Z"></path>
+                  <path d="M6 0v6H0V0h6ZM5 1H1v4h4V1ZM4 12H2v2h2v-2Z"></path>
+                  <path d="M6 10v6H0v-6h6Zm-5 1v4h4v-4H1Zm11-9h2v2h-2V2Z"></path>
+                  <path
+                    d="M10 0v6h6V0h-6Zm5 1v4h-4V1h4ZM8 1V0h1v2H8v2H7V1h1Zm0 5V4h1v2H8ZM6 8V7h1V6h1v2h1V7h5v1h-4v1H7V8H6Zm0 0v1H2V8H1v1H0V7h3v1h3Zm10 1h-1V7h1v2Zm-1 0h-1v2h2v-1h-1V9Zm-4 0h2v1h-1v1h-1V9Zm2 3v-1h-1v1h-1v1H9v1h3v-2h1Zm0 0h3v1h-2v1h-1v-2Zm-4-1v1h1v-2H7v1h2Z"
+                  ></path>
+                  <path d="M7 12h1v3h4v1H7v-4Zm9 2v2h-3v-1h2v-1h1Z"></path>
+                </svg>
+              </div>
+              {{ $t("direct_link") }}
+            </button>
+          </div>
+        </DropDown>
         <button
           v-if="can_edit"
           type="button"
@@ -77,6 +101,14 @@
         :can_save_to_project="false"
         @close="show_export_pdf_modal = false"
       />
+      <SharePublication
+        v-if="show_qr_code_modal"
+        :share_url="share_url"
+        :publication_path="publication.$path"
+        :is_public="publication.$public === true"
+        :can_edit="can_edit"
+        @close="show_qr_code_modal = false"
+      />
     </div>
 
     <div class="_rootEdition--content">
@@ -95,6 +127,7 @@ import {
   publicationSlugFromPath,
 } from "@/utils/folderPublications.js";
 import SiteBrand from "@/components/nav/SiteBrand.vue";
+import { resolveAppPublicOrigin } from "@/utils/app_public_url.js";
 
 export default {
   props: {
@@ -108,10 +141,13 @@ export default {
       import("@/components/publications/templates/EditionTemplate.vue"),
     ExportPubliModal: () =>
       import("@/components/publications/ExportPubliModal.vue"),
+    SharePublication: () =>
+      import("@/components/publications/SharePublication.vue"),
   },
   data() {
     return {
       show_export_pdf_modal: false,
+      show_qr_code_modal: false,
     };
   },
   computed: {
@@ -126,6 +162,10 @@ export default {
         name: "PublicPublication",
         params: { publication_slug },
       }).href;
+    },
+    share_url() {
+      if (!this.public_url) return "";
+      return resolveAppPublicOrigin() + this.public_url;
     },
   },
   methods: {
