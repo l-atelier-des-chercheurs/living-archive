@@ -327,6 +327,7 @@ new Vue({
     dropzones: [],
 
     publication_include_mode: "link",
+    edition_text_overflow_cells: {},
   },
   created() {
     const getTime = () => new Date().getTime();

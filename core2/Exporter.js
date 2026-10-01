@@ -13,7 +13,9 @@ const utils = require("./utils"),
   tasks = require("./exporter_tasks/tasks"),
   effects = require("./exporter_tasks/effects"),
   optimizer = require("./exporter_tasks/optimizer"),
-  ffmpegTracker = require("./ffmpeg-tracker");
+  imposition = require("./exporter_tasks/imposition"),
+  ffmpegTracker = require("./ffmpeg-tracker"),
+  { pathToPublicPath } = require("../shared/path_to_public_path.mjs");
 
 class Exporter {
   constructor({ path_to_folder, folder_to_export_to, instructions }) {
@@ -40,6 +42,8 @@ class Exporter {
       full_path_to_file = await this._createStopmotionFromImages();
     } else if (this.instructions.recipe === "pdf") {
       full_path_to_file = await this._loadPageAndPrint();
+      if (this.instructions.imposition?.mode === "booklet")
+        full_path_to_file = await this._imposeBooklet(full_path_to_file);
     } else if (this.instructions.recipe === "png") {
       full_path_to_file = await this._loadPageAndPrint();
     } else if (this.instructions.recipe === "webpage") {
@@ -339,37 +343,20 @@ class Exporter {
 
       let url = this._createURLFromPath(this.path_to_folder);
 
-      let query = {};
-      if (this.instructions.page) query.page = this.instructions.page;
-      if (this.instructions.view_mode)
-        query.view_mode = this.instructions.view_mode;
-      if (this.instructions.style) query.style = this.instructions.style;
-      if (this.instructions.display) query.display = this.instructions.display;
-      if (this.instructions.view) query.view = this.instructions.view;
-      if (this.instructions.make_preview === true) query.make_preview = true;
+      const url_query = {
+        ...(this.instructions.url_query || {}),
+      };
+      delete url_query.superadmintoken;
+      url_query.superadmintoken = auth.getSuperadminToken();
 
-      const superadmintoken = auth.getSuperadminToken();
-      query.superadmintoken = superadmintoken;
-
-      const searchParams = new URLSearchParams(query);
+      const searchParams = new URLSearchParams(url_query);
       url += "?" + searchParams.toString();
 
       const layout_mode = this.instructions.layout_mode || "print";
       const document_width = this.instructions.page_width || 210;
       const document_height = this.instructions.page_height || 297;
 
-      let number_of_pages_to_export = undefined;
-      if (this.instructions.page) {
-        if (
-          typeof this.instructions.page === "string" &&
-          this.instructions.page.includes("-")
-        ) {
-          const [start, end] = this.instructions.page.split("-");
-          number_of_pages_to_export = end - start + 1;
-        } else {
-          number_of_pages_to_export = 1;
-        }
-      }
+      const number_of_pages_to_export = this.instructions.page_count;
 
       const recipe = this.instructions.recipe;
 
@@ -399,25 +386,31 @@ class Exporter {
     }
   }
 
+  async _imposeBooklet(path_to_pdf) {
+    try {
+      dev.logfunction();
+      this._notifyProgress(92);
+      const path_to_booklet = await imposition.imposeBooklet({
+        source: path_to_pdf,
+        signature_size: this.instructions.imposition.signature_size,
+      });
+      await fs.remove(path_to_pdf);
+      return path_to_booklet;
+    } catch (err) {
+      dev.error(`err for imposition ${err}`);
+      this._notifyEnded({
+        event: "failed",
+        info: err.message,
+      });
+      throw new Error(`failed`);
+    }
+  }
+
   _loadPageAndExport() {
     return new Promise(async (resolve, reject) => {
       this._notifyProgress(5);
 
-      // convert path_to_folder to URL (see createURLFromPath)
       dev.logfunction();
-
-      let url = this._createURLFromPath(this.path_to_folder);
-
-      let query = {};
-
-      // use superadmin token
-      const superadmintoken = auth.getSuperadminToken();
-      query.superadmintoken = superadmintoken;
-
-      if (Object.keys(query).length > 0) {
-        const searchParams = new URLSearchParams(query);
-        url += "?" + searchParams.toString();
-      }
 
       const res = this.instructions.express_res;
 
@@ -1105,11 +1098,10 @@ class Exporter {
   }
 
   _createURLFromPath(path_to_folder) {
-    const path_without_space = path_to_folder
-      .replace("spaces" + path.sep, "+")
-      .replace("projects" + path.sep, "");
-    const base_url = utils.getPublicUrl({ fallback_to_home_url: true });
-    return base_url + "/" + path_without_space;
+    // PDF/PNG only: URL for Puppeteer on this machine. Share/QR in the page
+    // use window.app_infos.public_url from the normal render path, not this.
+    const base_url = (global.appInfos?.homeURL || "").replace(/\/+$/, "");
+    return base_url + pathToPublicPath(path_to_folder);
   }
 }
 
