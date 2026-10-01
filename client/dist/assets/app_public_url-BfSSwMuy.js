@@ -1,0 +1,1 @@
+function o(){var i;const r=(i=window.app_infos)==null?void 0:i.public_url;if(r&&typeof r=="string"&&r.trim())try{return new URL(r.trim().replace(/\/+$/,"")).origin}catch{}return window.location.origin}export{o as r};
