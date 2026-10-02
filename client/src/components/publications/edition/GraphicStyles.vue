@@ -13,6 +13,18 @@
     <div class="_topTabs">
       <button
         type="button"
+        v-for="builtin_style in builtin_styles"
+        :key="builtin_style.key"
+        class="u-button u-button_small"
+        :class="{
+          'is--active': opened_style_file?.$path === builtin_style.key,
+        }"
+        @click="openBuiltinStyles(builtin_style.key)"
+      >
+        {{ $t(builtin_style.title_key) }}
+      </button>
+      <button
+        type="button"
         v-for="style_file in style_files"
         :key="style_file.$path"
         class="u-button u-button_small"
@@ -22,16 +34,6 @@
         @click="openStyleFile(style_file.$path)"
       >
         {{ style_file.css_title || getFilename(style_file.$path) }}
-      </button>
-      <button
-        type="button"
-        class="u-button u-button_small"
-        :class="{
-          'is--active': opened_style_file?.$path === 'default',
-        }"
-        @click="openDefaultStyles"
-      >
-        {{ $t("default_styles") }}
       </button>
       <button
         type="button"
@@ -93,7 +95,10 @@
 <script>
 import BaseModal2 from "@/adc-core/modals/BaseModal2.vue";
 import OpenedGraphicStyles from "@/components/publications/edition/OpenedGraphicStyles.vue";
-import default_styles from "@/components/publications/edition/default_styles.css?raw";
+import {
+  builtin_styles,
+  builtinStyleCss,
+} from "@/components/publications/edition/builtin_styles.js";
 import hljs from "highlight.js/lib/common";
 import "highlight.js/styles/vs2015.css";
 
@@ -108,7 +113,8 @@ export default {
   },
   data() {
     return {
-      default_styles,
+      builtin_styles,
+      default_styles: builtinStyleCss("default"),
       show_create_css_modal: false,
       new_css_title: "",
     };
@@ -137,14 +143,16 @@ export default {
         });
     },
     opened_style_file() {
-      if (
-        this.opened_style_file_meta === "default" ||
-        this.style_files.length === 0
-      ) {
+      const builtin_style =
+        this.builtin_styles.find(
+          (s) => s.key === this.opened_style_file_meta
+        ) ||
+        (this.style_files.length === 0 ? this.builtin_styles[0] : undefined);
+      if (builtin_style) {
         return {
-          $path: "default",
-          css_title: this.$t("default_styles"),
-          $content: default_styles,
+          $path: builtin_style.key,
+          css_title: this.$t(builtin_style.title_key),
+          $content: builtin_style.css,
           is_default: true,
         };
       }
@@ -160,7 +168,9 @@ export default {
       const { meta_filename } = await this.$api.uploadText({
         path: this.publication.$path,
         filename,
-        content: default_styles,
+        content:
+          builtinStyleCss(this.opened_style_file_meta) ||
+          builtinStyleCss("default"),
         additional_meta: {
           $type: "text",
           css_title: this.new_css_title,
@@ -174,13 +184,16 @@ export default {
       this.$emit("setStyleFile", meta_filename);
     },
     async resetCustom() {
-      this.$refs.styleEditor.restoreVersion(default_styles);
+      this.$refs.styleEditor.restoreVersion(this.default_styles);
     },
     openStyleFile(path) {
       this.$emit("setStyleFile", this.getFilename(path));
     },
+    openBuiltinStyles(key) {
+      this.$emit("setStyleFile", key);
+    },
     openDefaultStyles() {
-      this.$emit("setStyleFile", "default");
+      this.openBuiltinStyles("default");
     },
   },
 };

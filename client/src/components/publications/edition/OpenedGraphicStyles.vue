@@ -1,7 +1,7 @@
 <template>
   <div class="_openedStyleFile">
-    <template v-if="style_file.$path === 'default'">
-      <h2>{{ $t("default_styles") }}</h2>
+    <template v-if="style_file.is_default">
+      <h2>{{ style_file.css_title }}</h2>
     </template>
     <template v-else>
       <TitleField
@@ -25,7 +25,7 @@
         @update:content="$emit('update:show_source_html', $event)"
       />
 
-      <template v-if="style_file.$path !== 'default'">
+      <template v-if="!style_file.is_default">
         <button
           type="button"
           class="u-buttonLink u-buttonLink_red"
@@ -75,7 +75,7 @@
     </div>
 
     <CollaborativeEditor3
-      v-if="style_file.$path !== 'default'"
+      v-if="!style_file.is_default"
       ref="styleEditor"
       :key="style_file.$path"
       :content="style_file.$content"
@@ -86,7 +86,7 @@
       :can_edit="true"
     />
     <div v-else class="defaultCode">
-      <pre v-html="pretty_default_styles" />
+      <pre v-html="pretty_builtin_styles" />
     </div>
     <div class="u-spacingBottom" />
   </div>
@@ -113,6 +113,10 @@ export default {
   beforeDestroy() {},
   watch: {},
   computed: {
+    pretty_builtin_styles() {
+      return hljs.highlight(this.style_file.$content, { language: "css" })
+        .value;
+    },
     pretty_default_styles() {
       return hljs.highlight(this.default_styles, { language: "css" }).value;
     },

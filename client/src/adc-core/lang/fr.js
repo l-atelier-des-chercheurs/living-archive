@@ -1501,6 +1501,7 @@ export default {
 
   failed_to_export: "Échec de l’exportation",
   default_styles: "Styles par défaut",
+  slash_styles: "Styles Slash",
   remove_css_file: "Supprimer la feuille de style",
   restored_success: "Restauré avec succès",
   restore_spaces: "Restaurer des espaces supprimés",

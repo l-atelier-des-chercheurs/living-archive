@@ -18,11 +18,17 @@
         </div>
       </div>
       <select
-        size="small"
-        v-if="style_files?.length > 0"
+        class="_styleSelect"
         :value="opened_style_file_meta"
         @change="$emit('setStyleFile', $event.target.value)"
       >
+        <option
+          v-for="builtin_style in builtin_styles"
+          :key="builtin_style.key"
+          :value="builtin_style.key"
+        >
+          {{ $t(builtin_style.title_key) }}
+        </option>
         <option
           v-for="style_file in style_files"
           :key="style_file.$path"
@@ -30,7 +36,6 @@
         >
           {{ style_file.css_title || getFilename(style_file.$path) }}
         </option>
-        <option value="default">{{ $t("default_styles") }}</option>
       </select>
     </div>
     <div
@@ -111,7 +116,10 @@ import DocViewer from "@/components/publications/edition/DocViewer.vue";
 import ErrorBar from "@/components/publications/edition/ErrorBar.vue";
 
 import pagedengine from "@/components/publications/edition/pagedengine.css?raw";
-import default_styles from "@/components/publications/edition/slash_styles.css?raw";
+import {
+  builtin_styles,
+  builtinStyleCss,
+} from "@/components/publications/edition/builtin_styles.js";
 
 export default {
   props: {
@@ -136,6 +144,7 @@ export default {
   },
   data() {
     return {
+      builtin_styles,
       is_loading: false,
       is_preview_mode: false,
       available_view_modes: [
@@ -188,11 +197,11 @@ export default {
       return this.publication.$files.find((f) => f.cover_type === "front");
     },
     custom_styles_unnested() {
-      if (
-        this.opened_style_file_meta === "default" ||
-        this.style_files?.length === 0
-      ) {
-        return default_styles;
+      const builtin_css = builtinStyleCss(this.opened_style_file_meta);
+      if (builtin_css) {
+        return builtin_css;
+      } else if (this.style_files?.length === 0) {
+        return builtinStyleCss("default");
       } else if (
         !this.opened_style_file_meta ||
         this.opened_style_file_meta === "first"
@@ -881,8 +890,12 @@ export default {
     gap: calc(var(--spacing) / 2);
   }
 
-  select {
+  ._styleSelect {
     width: 18ch;
+    min-height: var(--input-height-small);
+    padding: calc(var(--spacing) / 4) calc(var(--spacing) / 2);
+    padding-right: calc(var(--spacing) / 2 + 1.25rem);
+    font-size: var(--input-font-size-small);
   }
 
   * {
@@ -908,6 +921,10 @@ export default {
   right: 0;
   z-index: 10;
   margin: calc(var(--spacing) / 2);
+  padding: calc(var(--spacing) / 4) calc(var(--spacing) / 2);
+  border-radius: var(--border-radius);
+  background-color: white;
+  color: var(--c-noir);
   pointer-events: none;
 
   ::v-deep > * {

@@ -1410,6 +1410,7 @@ export default {
   "type:": "Type: {type}",
   failed_to_export: "Failed to export",
   default_styles: "Default styles",
+  slash_styles: "Slash styles",
   restore: "Restore",
   remove_for_good: "Remove for good",
   bin_is_empty: "The trash is empty",
