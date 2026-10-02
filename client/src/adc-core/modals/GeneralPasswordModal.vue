@@ -21,14 +21,32 @@
       </header>
 
       <form class="_gateScreen--form" @submit.prevent="submitGeneralPassword">
+        <!-- gives the password manager a recognizable name for this entry, so
+          it is not mixed up with an account login -->
+        <input
+          type="text"
+          name="username"
+          class="_hiddenUsername"
+          autocomplete="username"
+          :value="$t('general_password')"
+          readonly
+          tabindex="-1"
+          aria-hidden="true"
+        />
         <TextInput
           :label_str="'general_password'"
           :content.sync="password_to_submit"
           :required="true"
           :input_type="'password'"
+          :autocomplete="'current-password'"
           :autofocus="true"
           @toggleValidity="($event) => (allow_send = $event)"
           @onEnter="submitGeneralPassword"
+        />
+
+        <ToggleInput
+          :content.sync="remember_on_this_device"
+          :label="$t('save_on_this_device')"
         />
 
         <p v-if="password_submit_error" class="u-errorMsg">
@@ -50,11 +68,13 @@
 </template>
 <script>
 import SlashLogo from "@/components/nav/SlashLogo.vue";
+import ToggleInput from "@/adc-core/inputs/ToggleInput.vue";
 
 export default {
   props: {},
   components: {
     SlashLogo,
+    ToggleInput,
   },
   data() {
     return {
@@ -238,5 +258,16 @@ export default {
     opacity: 1;
     transform: none;
   }
+
+// visually hidden but not display:none, which password managers ignore
+._hiddenUsername {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
 }
 </style>
