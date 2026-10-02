@@ -110,7 +110,7 @@ import DocViewer from "@/components/publications/edition/DocViewer.vue";
 import ErrorBar from "@/components/publications/edition/ErrorBar.vue";
 
 import pagedengine from "@/components/publications/edition/pagedengine.css?raw";
-import default_styles from "@/components/publications/edition/default_styles.css?raw";
+import default_styles from "@/components/publications/edition/slash_styles.css?raw";
 
 export default {
   props: {

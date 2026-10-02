@@ -1,0 +1,309 @@
+:root {
+  /* Slash platform brand palette (same values as App.vue) */
+  --slash-blue: #4980c8;
+  --slash-blue-dark: #3568a8;
+  --slash-mint: #e5ffdb;
+  --slash-burgundy: #87221d;
+  --slash-orange: #ff5829;
+  --slash-ink: #1f2430;
+
+  --main-color: var(--slash-blue);
+  --main-color-opacity: rgba(73, 128, 200, 0.7);
+  --second-color: var(--slash-orange);
+  --text-color: var(--slash-ink);
+  --title-color: var(--slash-burgundy);
+
+  /* Rubik only ships 400 and 700 here, so stick to those weights */
+  --text-font: "Rubik", sans-serif;
+  --title-font: "Rubik", sans-serif;
+  --mono-font: "Fira Mono", monospace;
+  --font-size: 11pt;
+  --line-height: 1.45;
+}
+
+/****************************************************
+ *
+ *  Slash template styles
+ *  styles template Slash
+ *
+ ****************************************************/
+
+/* applies to book + web */
+.edition {
+  font-size: var(--font-size);
+  font-family: var(--text-font);
+  line-height: var(--line-height);
+  color: var(--text-color);
+
+  p,
+  ul,
+  ol,
+  blockquote,
+  pre,
+  .media,
+  h1,
+  h2,
+  h3,
+  figure {
+    margin-bottom: 1em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--title-font);
+    font-weight: bold;
+    color: var(--title-color);
+    line-height: 1.15;
+  }
+
+  h1 {
+    font-size: calc(var(--font-size) * 2.2);
+    text-align: left;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: calc(var(--font-size) * 1.4);
+    color: var(--main-color);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  h3 {
+    font-size: calc(var(--font-size) * 1.1);
+  }
+
+  a {
+    color: var(--slash-blue-dark);
+    text-decoration-color: var(--slash-orange);
+    text-underline-offset: 0.15em;
+  }
+
+  strong {
+    font-weight: bold;
+  }
+
+  ul,
+  ol {
+    margin-left: 1rem;
+  }
+  ol li,
+  ul li {
+    list-style: none;
+    margin-bottom: calc(var(--font-size) * var(--line-height) / 2);
+  }
+  li::marker {
+    font-size: 10pt;
+    font-weight: 700;
+    font-family: var(--mono-font);
+    color: var(--slash-orange);
+  }
+  ul li::marker {
+    content: "/ ";
+  }
+  ol {
+    counter-reset: item;
+    li {
+      counter-increment: item;
+      &::marker {
+        content: counter(item) ". ";
+      }
+    }
+  }
+
+  .mediaCaption {
+    margin: auto;
+    padding-top: 0mm;
+    text-align: left;
+    font-size: smaller;
+    color: var(--slash-blue-dark);
+  }
+
+  blockquote {
+    margin-left: 0.75cm;
+    padding: 0.25cm 0.25cm 0.25cm 0.5cm;
+    border-left: 3px solid var(--slash-orange);
+    background: var(--slash-mint);
+    font-family: var(--title-font);
+  }
+
+  code,
+  pre {
+    font-family: var(--mono-font);
+    font-size: 0.9em;
+  }
+  pre {
+    padding: 0.25cm;
+    background: var(--slash-mint);
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--slash-blue);
+  }
+
+  /* cover design */
+  .coverTitle p {
+    font-family: var(--title-font);
+    font-size: 40pt;
+    font-weight: bold;
+    line-height: 1.1;
+    text-align: left;
+    color: var(--title-color);
+    background: var(--slash-mint);
+    border-left: 8px solid var(--slash-orange);
+    padding: 0.25cm 0.5cm;
+    margin-top: 0.5cm;
+  }
+
+  .coverImage {
+    background: var(--slash-blue);
+
+    img {
+      mix-blend-mode: screen;
+      filter: grayscale(100%) contrast(120%);
+    }
+  }
+}
+
+/* --------------------------------------------------- */
+
+@page {
+  margin: 0;
+}
+
+@page chapter {
+  margin-top: 18mm;
+  margin-bottom: 24mm;
+}
+
+@page chapter:left {
+  margin-left: 13mm;
+  margin-right: 20mm;
+  @bottom-left {
+    content: counter(page);
+    font-size: 10pt;
+    font-family: var(--mono-font);
+    text-align: left;
+    color: var(--slash-orange);
+  }
+  @left-middle {
+    font-family: var(--mono-font);
+    font-size: 8pt;
+    content: string(title);
+    writing-mode: vertical-lr;
+    margin-top: 3mm;
+    margin-left: 4mm;
+    color: var(--main-color);
+  }
+}
+
+@page chapter:right {
+  margin-left: 20mm;
+  margin-right: 13mm;
+  @right-middle {
+    font-family: var(--mono-font);
+    font-size: 8pt;
+    content: string(title);
+    writing-mode: vertical-lr;
+    margin-top: 3mm;
+    margin-left: 4mm;
+    color: var(--main-color);
+  }
+  @bottom-right {
+    content: counter(page);
+    font-size: 10pt;
+    font-family: var(--mono-font);
+    text-align: right;
+    color: var(--slash-orange);
+  }
+}
+
+/* SHOW CHAPTER NAME ON EACH PAGE */
+/*
+  Note: string-set and page should not be in a specific selector such as .book .chapter or body .chapter
+  looks like a bug in paged.js
+*/
+.chapter[data-chapter-type="text"] {
+  string-set: title attr(data-chapter-title);
+  page: chapter;
+}
+.chapter {
+  > *:first-child {
+    margin-top: 0;
+  }
+}
+
+/* --------------------------------------------------- */
+
+/* applies to web pages */
+.web {
+  margin: 0 auto;
+  max-width: 120ch;
+
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+
+  gap: calc(var(--spacing) * 2);
+  padding: calc(var(--spacing) * 4) calc(var(--spacing) * 2);
+
+  font-size: 1rem;
+
+  nav {
+    position: sticky;
+    top: 0;
+    flex: 1 0 16ch;
+    margin-top: 3.5rem;
+    font-family: var(--mono-font);
+    font-size: 0.85em;
+
+    ol {
+      margin-left: calc(var(--spacing));
+      li {
+        margin: 0;
+      }
+    }
+    button {
+      display: inline-block;
+      vertical-align: top;
+      text-align: left;
+      color: var(--slash-blue-dark);
+      background: transparent;
+      border-radius: 0.25em;
+      cursor: pointer;
+      font-size: inherit;
+      font-family: inherit;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--slash-mint);
+      }
+    }
+    button.active {
+      background: var(--slash-orange);
+      color: white;
+    }
+  }
+
+  .chapter,
+  .cover {
+    flex: 10 1 0;
+    overflow: auto;
+  }
+
+  h1 {
+    font-size: 2.2em;
+  }
+  h2 {
+    font-size: 1.4em;
+  }
+  h3 {
+    font-size: 1.1em;
+  }
+
+  pre > code {
+    overflow: auto;
+    max-width: 100%;
+    display: block;
+  }
+}
