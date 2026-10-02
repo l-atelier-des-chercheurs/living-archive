@@ -104,6 +104,7 @@ import DOMPurify from "dompurify";
 import { generate } from "lean-qr";
 import { renderMedia as renderMediaFunction } from "@/components/publications/edition/renderMedia.js";
 import { imageSourceAttributes } from "@/utils/printImageQuality.js";
+import { keepExtraBlankLines } from "@/utils/markdownBlankLines.js";
 
 import PagedViewer from "@/components/publications/edition/PagedViewer.vue";
 import DocViewer from "@/components/publications/edition/DocViewer.vue";
@@ -499,7 +500,7 @@ export default {
         allowedAttributes: [], // empty array = all attributes are allowed
       });
 
-      const result = md.render(content);
+      const result = md.render(keepExtraBlankLines(content));
       // Allow iframes for PDFs and other embedded content
       const sanitized_result = DOMPurify.sanitize(result, {
         ADD_TAGS: ["iframe"],
