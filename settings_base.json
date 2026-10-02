@@ -279,6 +279,9 @@
             "section_starts_on_page": {
               "type": "string"
             },
+            "section_show_pagination": {
+              "type": "boolean"
+            },
             "section_description": {
               "type": "string"
             },
