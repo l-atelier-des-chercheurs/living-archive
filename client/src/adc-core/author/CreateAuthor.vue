@@ -66,6 +66,19 @@
 
           <div class="u-spacingBottom" />
 
+          <div>
+            <DLabel :str="$t('group')" />
+            <SelectField2
+              :value="new_author_group"
+              :options="group_options"
+              :can_edit="true"
+              :hide_validation="true"
+              @change="new_author_group = $event"
+            />
+          </div>
+
+          <div class="u-spacingBottom" />
+
           <div class="">
             <DLabel :str="$t('pick_portrait')" />
             <div>
@@ -138,9 +151,10 @@
             <button
               :loading="is_creating_author"
               :disabled="
-                $root.app_infos.instance_meta
+                !new_author_group ||
+                ($root.app_infos.instance_meta
                   .users_must_accept_terms_to_signup === true &&
-                terms_accepted === false
+                  terms_accepted === false)
               "
               class="u-button u-button_bleuvert"
               type="submit"
@@ -157,6 +171,8 @@
   </div>
 </template>
 <script>
+import { slash_contributors_list } from "@/config/slash_contributors_list.js";
+
 export default {
   props: {
     is_first_user: Boolean,
@@ -169,6 +185,7 @@ export default {
       new_author_email: "",
       new_author_name: "",
       new_author_password: "",
+      new_author_group: "",
       new_author_cover_raw: undefined,
 
       select_image: false,
@@ -203,6 +220,13 @@ export default {
     has_signup_password() {
       return !!this.signup_password;
     },
+    group_options() {
+      return [
+        { key: "", text: this.$t("select"), disabled: true },
+        ...slash_contributors_list.map((g) => ({ key: g.category })),
+        { key: "Other" },
+      ];
+    },
     new_cover_object_url() {
       if (!this.new_cover) return undefined;
       return URL.createObjectURL(this.new_cover);
@@ -223,6 +247,7 @@ export default {
             requested_slug: this.new_author_name,
             $status: "public",
             $password: this.new_author_password,
+            group: [this.new_author_group],
           },
         });
 

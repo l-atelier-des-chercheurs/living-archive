@@ -2,10 +2,7 @@ export default {
   // LoginModal
   hello_slashers: "Hello Slashers!",
   login_modal_description:
-    "Pick your name so every contribution is credited to you.",
-  pick_your_name_label: "Your name",
-  identify_yourself_here: "Identify yourself here",
-  other_authors_category: "Other",
+    "Log in or create an account so every contribution is credited to you.",
   login: "Login",
   change_color: "Change color",
 
