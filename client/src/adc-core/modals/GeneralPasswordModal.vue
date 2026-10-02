@@ -258,6 +258,7 @@ export default {
     opacity: 1;
     transform: none;
   }
+}
 
 // visually hidden but not display:none, which password managers ignore
 ._hiddenUsername {
@@ -268,6 +269,5 @@ export default {
   border: 0;
   opacity: 0;
   pointer-events: none;
-}
 }
 </style>
