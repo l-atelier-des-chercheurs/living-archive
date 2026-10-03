@@ -19,9 +19,7 @@
       class="_publicPublication is--consult"
       :class="{ 'is--export': is_export }"
     >
-      <header v-if="!is_export" class="_consult--header">
-        <SiteBrand :link_home="true" :compact="true" />
-      </header>
+      <SiteHeader v-if="!is_export" class="_consult--header" />
 
       <div class="_consult--body">
         <EditionExport
@@ -99,7 +97,7 @@
 </template>
 <script>
 import DynamicTitle from "@/mixins/DynamicTitle.js";
-import SiteBrand from "@/components/nav/SiteBrand.vue";
+import SiteHeader from "@/components/nav/SiteHeader.vue";
 import PostcardShareMenu from "@/components/slash/PostcardShareMenu.vue";
 import {
   getRootPublicationPath,
@@ -114,7 +112,7 @@ export default {
     PostcardView: () => import("@/views/PostcardView.vue"),
     EditionExport: () =>
       import("@/components/publications/edition/EditionExport.vue"),
-    SiteBrand,
+    SiteHeader,
     PostcardShareMenu,
   },
   data() {
@@ -292,10 +290,10 @@ export default {
   padding: 0;
 }
 
+// blue band bleeds over the page padding, like on postcards
 ._consult--header {
-  --site-brand-color: var(--c-slash-burgundy, #87221d);
-  flex-shrink: 0;
-  margin-bottom: calc(var(--spacing) * 1.5);
+  margin: calc(var(--spacing) * -2) calc(var(--spacing) * -2)
+    calc(var(--spacing) * 1.5);
 }
 
 ._consult--body {

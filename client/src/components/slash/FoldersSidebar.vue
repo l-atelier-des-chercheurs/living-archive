@@ -116,72 +116,77 @@
         </form>
       </section>
 
-      <!-- Publication section (home only) -->
-      <section
-        v-if="!is_overlay && !needs_general_password"
-        class="_foldersPanel--section"
-      >
-        <h2 class="_foldersPanel--sectionTitle">Publications</h2>
-        <div class="_foldersPanel--grid">
-          <button
-            type="button"
-            class="_foldersPanel--card is--create is--createPostcard"
-            title="Create a postcard"
-            aria-label="Create a postcard"
-            @click="startCreatePublication('postcard')"
-          >
-            <div class="_foldersPanel--pcSchema" aria-hidden="true">
-              <span class="_foldersPanel--pcImage">
-                <b-icon icon="plus-lg" />
-              </span>
-              <span class="_foldersPanel--pcBack">
-                <span class="_foldersPanel--pcStamp" />
-                <span v-for="n in 3" :key="n" class="_foldersPanel--pcLine" />
-              </span>
-            </div>
-          </button>
-          <button
-            type="button"
-            class="_foldersPanel--card is--create"
-            @click="startCreatePublication('a5_booklet')"
-          >
-            <span class="_foldersPanel--cardTitle is--flag"
-              >Create a booklet</span
+      <!-- One section per publication type (home only) -->
+      <template v-if="!is_overlay && !needs_general_password">
+        <section
+          v-for="row in publication_rows"
+          :key="row.key"
+          class="_foldersPanel--section _foldersPanel--pubRow"
+        >
+          <h2 class="_foldersPanel--sectionTitle">{{ row.label }}</h2>
+          <HorizontalScrollRow>
+            <button
+              v-if="row.key === 'postcard'"
+              type="button"
+              class="_foldersPanel--card is--create is--createPostcard"
+              title="Create a postcard"
+              aria-label="Create a postcard"
+              @click="startCreatePublication('postcard')"
             >
-            <div class="_foldersPanel--cardIcon is--create">
-              <b-icon icon="plus-lg" />
-            </div>
-          </button>
-
-          <div
-            v-for="pub in sorted_publications"
-            :key="pub.$path"
-            class="_foldersPanel--card is--publication"
-            role="button"
-            tabindex="0"
-            :title="pub.title || pub.$path.split('/').pop()"
-            @click="openPublication(pub)"
-            @keydown.enter="openPublication(pub)"
-            @keydown.space.prevent="openPublication(pub)"
-          >
-            <div class="_foldersPanel--pubCover">
-              <CoverField
-                :cover="pub.$cover"
-                :path="pub.$path"
-                :can_edit="false"
-                :ratio="'148 / 105'"
-                :resolution="320"
-                context="preview"
-              />
-              <span
-                class="_foldersPanel--pubName"
-                :class="{ 'is--caption': pub.template === 'postcard' }"
-                >{{ pub.title || pub.$path.split("/").pop() }}</span
+              <div class="_foldersPanel--pcSchema" aria-hidden="true">
+                <span class="_foldersPanel--pcImage">
+                  <b-icon icon="plus-lg" />
+                </span>
+                <span class="_foldersPanel--pcBack">
+                  <span class="_foldersPanel--pcStamp" />
+                  <span v-for="n in 3" :key="n" class="_foldersPanel--pcLine" />
+                </span>
+              </div>
+            </button>
+            <button
+              v-else-if="row.key === 'edition'"
+              type="button"
+              class="_foldersPanel--card is--create is--createBooklet"
+              @click="startCreatePublication('a5_booklet')"
+            >
+              <span class="_foldersPanel--cardTitle is--flag"
+                >Create a booklet</span
               >
+              <div class="_foldersPanel--cardIcon is--create">
+                <b-icon icon="plus-lg" />
+              </div>
+            </button>
+
+            <div
+              v-for="pub in row.publications"
+              :key="pub.$path"
+              class="_foldersPanel--card is--publication"
+              role="button"
+              tabindex="0"
+              :title="pub.title || pub.$path.split('/').pop()"
+              @click="openPublication(pub)"
+              @keydown.enter="openPublication(pub)"
+              @keydown.space.prevent="openPublication(pub)"
+            >
+              <div class="_foldersPanel--pubCover">
+                <CoverField
+                  :cover="pub.$cover"
+                  :path="pub.$path"
+                  :can_edit="false"
+                  :ratio="'148 / 105'"
+                  :resolution="320"
+                  context="preview"
+                />
+                <span
+                  class="_foldersPanel--pubName"
+                  :class="{ 'is--caption': pub.template === 'postcard' }"
+                  >{{ pub.title || pub.$path.split("/").pop() }}</span
+                >
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </HorizontalScrollRow>
+        </section>
+      </template>
 
       <section v-if="!needs_general_password" class="_foldersPanel--section">
         <h2 v-if="!is_overlay" class="_foldersPanel--sectionTitle">
@@ -311,6 +316,7 @@ import CoverField from "@/adc-core/fields/CoverField.vue";
 import SlashLogo from "@/components/nav/SlashLogo.vue";
 import SiteBrand from "@/components/nav/SiteBrand.vue";
 import SiteFooter from "@/components/slash/SiteFooter.vue";
+import HorizontalScrollRow from "@/components/slash/HorizontalScrollRow.vue";
 import site_info from "@/config/site_info.js";
 import {
   getRootPublicationsPath,
@@ -326,6 +332,7 @@ export default {
     SlashLogo,
     SiteBrand,
     SiteFooter,
+    HorizontalScrollRow,
   },
   props: {
     folders: {
@@ -377,6 +384,20 @@ export default {
         .sort(
           (a, b) => +new Date(b.$date_created) - +new Date(a.$date_created)
         );
+    },
+    // one row per type: create card first, then newest to oldest
+    publication_rows() {
+      const rows = [
+        { key: "postcard", label: "Postcards", publications: [] },
+        { key: "edition", label: "Booklets", publications: [] },
+      ];
+      const others = { key: "other", label: "Other", publications: [] };
+      this.sorted_publications.forEach((pub) => {
+        const row = rows.find((r) => r.key === pub.template) || others;
+        row.publications.push(pub);
+      });
+      if (others.publications.length) rows.push(others);
+      return rows;
     },
     create_modal_title() {
       const config = getTemplateConfig(this.create_template);
@@ -798,6 +819,21 @@ export default {
   &[disabled] {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+}
+
+._foldersPanel--pubRow {
+  min-width: 0;
+
+  // fixed card width so each type reads as one horizontal strip
+  ._foldersPanel--card {
+    width: clamp(180px, 42vw, 240px);
+  }
+
+  // beats .is--create:has(.is--flag)'s min-height
+  ._foldersPanel--card.is--create.is--createBooklet.is--createBooklet {
+    aspect-ratio: 148 / 105;
+    min-height: 0;
   }
 }
 

@@ -1,6 +1,16 @@
 <template>
   <header class="_siteHeader">
-    <SiteBrand :link_home="true" :compact="true" />
+    <div class="_siteHeader--start">
+      <router-link
+        v-if="!is_home"
+        :to="{ name: 'Accueil' }"
+        class="_siteHeader--back"
+        :title="$t('back')"
+      >
+        <b-icon icon="arrow-left" :label="$t('back')" />
+      </router-link>
+      <SiteBrand :link_home="true" :compact="true" />
+    </div>
     <button
       type="button"
       class="u-button _siteHeader--account"
@@ -25,6 +35,11 @@ import SiteBrand from "@/components/nav/SiteBrand.vue";
 export default {
   name: "SiteHeader",
   components: { SiteBrand },
+  computed: {
+    is_home() {
+      return this.$route.name === "Accueil";
+    },
+  },
 };
 </script>
 
@@ -39,6 +54,34 @@ export default {
   padding: calc(var(--spacing) / 1.5) var(--spacing);
   background: var(--c-slash-blue, var(--c-bleuvert));
   color: var(--c-slash-mint, #e5ffdb);
+}
+
+._siteHeader--start {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) / 1.5);
+  min-width: 0;
+}
+
+._siteHeader--back {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  // keep the comfy hit area without making the bar taller
+  margin-block: -0.75rem;
+  border-radius: 50%;
+  color: inherit;
+  font-size: 1.35rem;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, currentColor 18%, transparent);
+  }
 }
 
 ._siteHeader--account {
