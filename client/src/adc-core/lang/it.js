@@ -98,6 +98,7 @@ Lascia il campo vuoto per rendere l'accesso aperto a tuttə. `,
   ancient: "Vecchio",
 
   connection_lost: `Connessione interrotta`,
+  connection_lost_short: "Offline",
   connection_lost_in: `La connessione al server si è interrotta.`,
   attempting_to_reconnect_in: `Nuovo tentativo di connessione a :`,
   reload_page: "Ricarica questa pagina",

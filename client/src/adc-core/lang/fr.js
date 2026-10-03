@@ -118,6 +118,7 @@ export default {
   ancient: "Ancien",
 
   connection_lost: `Connexion perdue`,
+  connection_lost_short: "Hors ligne",
   connection_lost_in: `La connexion au serveur s’est interrompue.`,
   attempting_to_reconnect_in: `Nouvelle tentative de connexion dans :`,
   reload_page: "Recharger cette page",

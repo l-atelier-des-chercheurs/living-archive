@@ -894,8 +894,16 @@ export default {
     connected_as() {
       this.prefillFrom();
     },
+    // global floating UI (offline badge) sits above the fixed bottom bar
+    bottom_bar_height(h) {
+      document.documentElement.style.setProperty(
+        "--fixed-bottom-bar-height",
+        h + "px"
+      );
+    },
   },
   beforeDestroy() {
+    document.documentElement.style.removeProperty("--fixed-bottom-bar-height");
     window.removeEventListener("keydown", this.onShareKeydown);
     window.removeEventListener("resize", this.updateBottomBarHeight);
     this.teardownPreviewLayout();

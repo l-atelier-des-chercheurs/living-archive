@@ -557,6 +557,7 @@ export default {
   url_to_open: "URL of the page to open",
   content: "Content",
   connection_lost: "Connection lost",
+  connection_lost_short: "Offline",
   connection_lost_in: "The connection to the server was lost.",
   attempting_to_reconnect_in: "Attempting to connect again in:",
   reload_page: "Reload this page",
