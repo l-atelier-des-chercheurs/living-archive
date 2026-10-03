@@ -1,7 +1,5 @@
 <template>
   <div class="_homeView">
-    <LoginModal v-if="show_login_modal" @close="show_login_modal = false" />
-
     <div class="_homeLayout">
       <transition name="folderViewTransition" mode="out-in">
         <div
@@ -37,17 +35,14 @@
 <script>
 import FolderView from "@/components/slash/FolderView.vue";
 import FoldersSidebar from "@/components/slash/FoldersSidebar.vue";
-import LoginModal from "@/components/slash/LoginModal.vue";
 export default {
   props: {},
   components: {
     FolderView,
     FoldersSidebar,
-    LoginModal,
   },
   data() {
     return {
-      show_login_modal: false,
       folders_path: "folders",
       folders: [],
       current_folder_path: "",
@@ -55,12 +50,10 @@ export default {
     };
   },
   async created() {
-    this.$eventHub.$on("login.openModal", this.openLoginModal);
     await this.initializeCurrentFolderFromRoute();
   },
   mounted() {},
   beforeDestroy() {
-    this.$eventHub.$off("login.openModal", this.openLoginModal);
     if (this.isRoomJoined(this.folders_path)) {
       this.$api.leave({ room: this.folders_path });
     }
@@ -101,9 +94,6 @@ export default {
       return Array.isArray(this.$api.rooms_joined)
         ? this.$api.rooms_joined.includes(room)
         : false;
-    },
-    openLoginModal() {
-      this.show_login_modal = true;
     },
     async initializeCurrentFolderFromRoute() {
       const folder_slug_from_route = this.$route.params.folder_slug;

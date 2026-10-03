@@ -1,8 +1,6 @@
 <template>
   <div class="_rootEdition">
-    <header class="_rootEdition--siteHeader">
-      <SiteBrand :link_home="true" :compact="true" />
-    </header>
+    <SiteHeader />
 
     <div class="_rootEdition--topbar">
       <div class="_rootEdition--titleRow">
@@ -126,7 +124,7 @@ import {
   getTemplateConfig,
   publicationSlugFromPath,
 } from "@/utils/folderPublications.js";
-import SiteBrand from "@/components/nav/SiteBrand.vue";
+import SiteHeader from "@/components/nav/SiteHeader.vue";
 import { resolveAppPublicOrigin } from "@/utils/app_public_url.js";
 
 export default {
@@ -136,7 +134,7 @@ export default {
     can_edit: Boolean,
   },
   components: {
-    SiteBrand,
+    SiteHeader,
     EditionTemplate: () =>
       import("@/components/publications/templates/EditionTemplate.vue"),
     ExportPubliModal: () =>
@@ -185,14 +183,6 @@ export default {
   overflow: hidden;
 }
 
-._rootEdition--siteHeader {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  padding: calc(var(--spacing) / 1.5) var(--spacing);
-  background: var(--c-slash-blue, var(--c-bleuvert));
-  color: var(--c-slash-mint, #e5ffdb);
-}
 
 ._rootEdition--topbar {
   flex: 0 0 auto;

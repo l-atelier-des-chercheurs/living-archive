@@ -1,5 +1,6 @@
 <template>
   <div v-if="folder" class="_folderView">
+    <SiteHeader />
     <div class="_mainContent">
       <div class="_viewArea">
         <TopLeftMenu
@@ -134,6 +135,7 @@ import PublicationsSidebar from "@/components/slash/PublicationsSidebar.vue";
 import CanvasSelectionBar from "@/components/slash/CanvasSelectionBar.vue";
 import ContributeModal from "@/components/slash/ContributeModal.vue";
 import NotFound from "@/components/NotFound.vue";
+import SiteHeader from "@/components/nav/SiteHeader.vue";
 
 export default {
   props: {
@@ -143,6 +145,7 @@ export default {
     },
   },
   components: {
+    SiteHeader,
     TopLeftMenu,
     GeoMapView,
     LargeCanvas,

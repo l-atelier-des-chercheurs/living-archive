@@ -10,7 +10,7 @@
             aria-label="All folders"
             @click="$emit('toggleFoldersSidebar')"
           >
-            <SlashLogo class="_dropMenu--slashLogo" />
+            <b-icon icon="folder2" class="_dropMenu--foldersIcon" />
           </button>
           <button
             type="button"
@@ -26,18 +26,6 @@
 
         <div class="_dropMenu--identity">
           <div class="_dropMenu--identityUser">
-            <button
-              v-if="connected_as"
-              type="button"
-              class="u-button u-button_transparent u-button_icon _dropMenu--userLabel"
-              @click="openLoginModal()"
-            >
-              <span
-                class="_dropMenu--userLabel__color"
-                :style="{ backgroundColor: connected_as?.color }"
-              ></span>
-              {{ connected_as.name }}
-            </button>
             <FolderContributorsList v-if="folder" :folder="folder" />
           </div>
           <DropMenuPanel
@@ -54,13 +42,11 @@
 <script>
 import DropMenuPanel from "@/components/slash/DropMenuPanel.vue";
 import FolderContributorsList from "@/components/slash/FolderContributorsList.vue";
-import SlashLogo from "@/components/nav/SlashLogo.vue";
 
 export default {
   components: {
     DropMenuPanel,
     FolderContributorsList,
-    SlashLogo,
   },
   props: {
     folder: Object,
@@ -91,9 +77,6 @@ export default {
     },
   },
   methods: {
-    openLoginModal() {
-      this.$eventHub.$emit("login.openModal");
-    },
     openFileImport() {
       this.$refs.file_input?.click();
     },
@@ -161,15 +144,6 @@ export default {
   flex-shrink: 0;
 }
 
-._dropMenu--userLabel {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--spacing) / 2);
-  white-space: nowrap;
-  font-weight: 600;
-  background-color: transparent;
-  padding: calc(var(--spacing) / 2);
-}
 
 ._dropMenu--folderLabelWrapper {
   display: flex;
@@ -187,10 +161,9 @@ export default {
   color: var(--c-slash-burgundy, var(--c-rouge));
 }
 
-._dropMenu--slashLogo {
+._dropMenu--foldersIcon {
   display: block;
-  width: 3.25rem;
-  height: auto;
+  font-size: 1.5rem;
 }
 
 ._dropMenu--folderLabel {
@@ -219,12 +192,4 @@ export default {
   line-height: 0;
 }
 
-._dropMenu--userLabel__color {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  margin-right: calc(var(--spacing) / 4);
-  line-height: 0;
-}
 </style>

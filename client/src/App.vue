@@ -37,6 +37,9 @@
       <FullUI v-else />
     </template>
 
+    <!-- global so any page can open it with $eventHub "login.openModal" -->
+    <LoginModal v-if="show_login_modal" @close="show_login_modal = false" />
+
     <portal-target name="destination" multiple />
   </div>
 </template>
@@ -47,18 +50,25 @@ export default {
   components: {
     FullUI,
     PublicationView: () => import("@/views/PublicationView.vue"),
+    LoginModal: () => import("@/components/slash/LoginModal.vue"),
   },
   data() {
     return {
       router_is_loading: true,
+      show_login_modal: false,
     };
+  },
+  created() {
+    this.$eventHub.$on("login.openModal", this.openLoginModal);
   },
   mounted() {
     setTimeout(() => {
       this.router_is_loading = false;
     }, 200);
   },
-  beforeDestroy() {},
+  beforeDestroy() {
+    this.$eventHub.$off("login.openModal", this.openLoginModal);
+  },
   watch: {},
   computed: {
     page_is_standalone_html() {
@@ -120,7 +130,11 @@ export default {
       }, ``);
     },
   },
-  methods: {},
+  methods: {
+    openLoginModal() {
+      this.show_login_modal = true;
+    },
+  },
 };
 </script>
 <style src="@node_modules/splitpanes/dist/splitpanes.css"></style>

@@ -7,10 +7,9 @@
       'is--composeWide': !is_share_view && step === 'form' && is_wide_layout,
     }"
   >
+    <SiteHeader class="_postcard--siteHeader" />
+
     <header v-if="!is_share_view" class="_postcard--header">
-      <a class="_postcard--brand" href="/" aria-label="Slash">
-        <SlashLogo class="_postcard--logo" />
-      </a>
       <div class="_postcard--headerText">
         <h1 class="_postcard--title">
           {{ publication_title || "Postcard" }}
@@ -23,10 +22,6 @@
           }}
         </p>
       </div>
-    </header>
-
-    <header v-else class="_postcard--shareHeader">
-      <SiteBrand :link_home="true" :compact="true" />
     </header>
 
     <div
@@ -608,8 +603,7 @@
 
 <script>
 import QRCodeStyling from "qr-code-styling";
-import SlashLogo from "@/components/nav/SlashLogo.vue";
-import SiteBrand from "@/components/nav/SiteBrand.vue";
+import SiteHeader from "@/components/nav/SiteHeader.vue";
 import PickMediaFromFolder from "@/components/slash/PickMediaFromFolder.vue";
 import PostcardShareMenu from "@/components/slash/PostcardShareMenu.vue";
 import AudioRecorder from "@/components/slash/AudioRecorder.vue";
@@ -659,8 +653,7 @@ const PREVIEW_WIDE_MQ = "(min-width: 960px)";
 export default {
   name: "PostcardView",
   components: {
-    SlashLogo,
-    SiteBrand,
+    SiteHeader,
     PickMediaFromFolder,
     PostcardShareMenu,
     AudioRecorder,
@@ -2040,7 +2033,10 @@ export default {
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0;
-  padding: 1.25rem clamp(1rem, 4vw, 2rem) 2rem;
+  /* also read by the site header to bleed to the page edges */
+  --pc-pad-top: 1.25rem;
+  --pc-pad-x: clamp(1rem, 4vw, 2rem);
+  padding: var(--pc-pad-top) var(--pc-pad-x) 2rem;
   background: #fff;
   color: var(--pc-ink);
   font-family: var(--pc-font);
@@ -2052,6 +2048,10 @@ export default {
 ._postcard *::before,
 ._postcard *::after {
   box-sizing: border-box;
+}
+
+._postcard--siteHeader {
+  margin: calc(-1 * var(--pc-pad-top)) calc(-1 * var(--pc-pad-x)) 1.25rem;
 }
 
 ._postcard--header {
@@ -2067,22 +2067,8 @@ export default {
   max-width: min(100%, 104rem);
 }
 
-._postcard--brand {
-  display: block;
-  color: var(--c-slash-burgundy);
-  text-decoration: none;
-  flex: 0 0 auto;
-}
 
-._postcard--brand:hover {
-  color: var(--c-slash-blue);
-}
 
-._postcard--logo {
-  display: block;
-  width: clamp(7.5rem, 18vw, 9.5rem);
-  height: auto;
-}
 
 ._postcard--headerText {
   flex: 1 1 10rem;
@@ -2300,19 +2286,14 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: calc(var(--spacing) * 2);
+  --pc-pad-top: calc(var(--spacing) * 2);
+  --pc-pad-x: calc(var(--spacing) * 2);
+  padding: var(--pc-pad-top) var(--pc-pad-x);
   padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
   min-height: 100vh;
   box-sizing: border-box;
 }
 
-._postcard--shareHeader {
-  --site-brand-color: var(--c-slash-burgundy);
-  width: 100%;
-  margin: 0 0 0.75rem;
-  padding: 0;
-  flex-shrink: 0;
-}
 
 ._postcard--shareActions {
   position: fixed;

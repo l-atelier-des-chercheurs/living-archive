@@ -1,8 +1,6 @@
 <template>
   <div class="_livingArchive">
-    <header class="_livingArchive--header">
-      <SiteBrand :link_home="true" :compact="true" />
-    </header>
+    <SiteHeader />
     <iframe
       class="_livingArchive--frame"
       :src="site_info.living_archive_url"
@@ -13,12 +11,12 @@
 </template>
 
 <script>
-import SiteBrand from "@/components/nav/SiteBrand.vue";
+import SiteHeader from "@/components/nav/SiteHeader.vue";
 import site_info from "@/config/site_info.js";
 
 export default {
   name: "LivingArchiveView",
-  components: { SiteBrand },
+  components: { SiteHeader },
   data() {
     return { site_info };
   },
@@ -34,14 +32,6 @@ export default {
   background: var(--body-bg, white);
 }
 
-._livingArchive--header {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  padding: calc(var(--spacing) / 1.5) var(--spacing);
-  background: var(--c-slash-blue, var(--c-bleuvert));
-  color: var(--c-slash-mint, #e5ffdb);
-}
 
 ._livingArchive--frame {
   flex: 1 1 auto;
