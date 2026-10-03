@@ -71,6 +71,9 @@ export default {
 
 <style lang="scss" scoped>
 ._hScrollRow {
+  --hscroll-arrow-bg: var(--c-slash-blue);
+  --hscroll-arrow-bg-hover: var(--c-slash-blue, #87221d);
+
   position: relative;
   min-width: 0;
   // own stacking context: hovered cards (transform) can't rise above the arrows
@@ -137,7 +140,7 @@ export default {
 
   &:hover ._hScrollRow--circle,
   &:focus-visible ._hScrollRow--circle {
-    background: white;
+    background: var(--hscroll-arrow-bg-hover);
     transform: scale(1.08);
     animation: none;
   }
@@ -149,10 +152,10 @@ export default {
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border: 2px solid var(--folders-accent, #87221d);
+  border: 2px solid white;
   border-radius: 50%;
-  background: var(--folders-fg, #e5ffdb);
-  color: var(--folders-accent, #87221d);
+  background: var(--hscroll-arrow-bg);
+  color: var(--c-slash-mint);
   font-size: 1.5rem;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
   transition: transform 0.15s ease, background-color 0.15s ease;
