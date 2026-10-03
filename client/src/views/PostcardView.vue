@@ -37,7 +37,11 @@
       }"
     >
       <div v-if="is_loading" class="_postcard--status">Loading…</div>
-      <div v-else-if="load_error" class="_postcard--alert is--danger" role="alert">
+      <div
+        v-else-if="load_error"
+        class="_postcard--alert is--danger"
+        role="alert"
+      >
         <b-icon icon="exclamation-octagon" />
         <span>{{ load_error }}</span>
       </div>
@@ -89,7 +93,10 @@
                 <b-icon icon="image" />
                 Add an image
               </span>
-              <span v-if="image_url && !is_uploading_image" class="_postcard--zoneHint is--overlay">
+              <span
+                v-if="image_url && !is_uploading_image"
+                class="_postcard--zoneHint is--overlay"
+              >
                 Change
               </span>
               <b-icon
@@ -152,19 +159,32 @@
                 </button>
               </div>
 
-              <label class="_postcard--rules is--editable">
-                <textarea
-                  ref="compose_text"
-                  class="_postcard--cardText"
-                  :value="postcard_text"
-                  :maxlength="text_max_length"
-                  :rows="text_line_count"
-                  :disabled="is_generating"
-                  aria-label="Text"
-                  placeholder="Write on the card…"
-                  @input="onTextInput"
-                ></textarea>
-              </label>
+              <div class="_postcard--rules is--editable">
+                <label class="_postcard--from">
+                  <span class="_postcard--fromLabel">From</span>
+                  <input
+                    v-model="postcard_from"
+                    class="_postcard--fromInput"
+                    type="text"
+                    :maxlength="from_max_length"
+                    :disabled="is_generating"
+                    aria-label="From"
+                  />
+                </label>
+                <label class="_postcard--textZone">
+                  <textarea
+                    ref="compose_text"
+                    class="_postcard--cardText"
+                    :value="postcard_text"
+                    :maxlength="text_max_length"
+                    :rows="text_line_count"
+                    :disabled="is_generating"
+                    aria-label="Text"
+                    placeholder="Write on the card…"
+                    @input="onTextInput"
+                  ></textarea>
+                </label>
+              </div>
             </div>
           </div>
 
@@ -173,7 +193,9 @@
               type="button"
               class="_postcard--zoneLink"
               :disabled="
-                is_generating || !accessible_folders.length || is_uploading_image
+                is_generating ||
+                !accessible_folders.length ||
+                is_uploading_image
               "
               aria-label="Image from a folder"
               @click="openFolderMediaModal('image')"
@@ -185,7 +207,9 @@
               type="button"
               class="_postcard--zoneLink"
               :disabled="
-                is_generating || !accessible_folders.length || is_uploading_audio
+                is_generating ||
+                !accessible_folders.length ||
+                is_uploading_audio
               "
               aria-label="Sound from a folder"
               @click="openFolderMediaModal('audio')"
@@ -226,42 +250,42 @@
               </li>
             </ul>
             <div class="_postcard--formActions">
-            <button
-              v-if="is_draft_mode"
-              type="button"
-              class="_postcard--deleteBtn"
-              :disabled="is_generating"
-              @click="goHome"
-            >
-              <b-icon icon="x-lg" />
-              {{ $t("cancel") }}
-            </button>
-            <button
-              v-else-if="can_edit && publication && publication.$path"
-              type="button"
-              class="_postcard--deleteBtn"
-              @click="show_remove_menu = true"
-            >
-              <b-icon icon="trash" />
-              {{ $t("remove") }}
-            </button>
-            <button
-              class="_postcard--primary"
-              type="submit"
-              :disabled="!can_generate || is_saving || is_generating"
-            >
-              <b-icon
-                v-if="is_saving && !is_generating"
-                icon="arrow-repeat"
-                class="_spinner"
-              />
-              <b-icon v-else-if="!is_generating" icon="card-image" />
-              {{
-                is_generating
-                  ? `${generation_progress}% — ${generation_status}`
-                  : "Generate card"
-              }}
-            </button>
+              <button
+                v-if="is_draft_mode"
+                type="button"
+                class="_postcard--deleteBtn"
+                :disabled="is_generating"
+                @click="goHome"
+              >
+                <b-icon icon="x-lg" />
+                {{ $t("cancel") }}
+              </button>
+              <button
+                v-else-if="can_edit && publication && publication.$path"
+                type="button"
+                class="_postcard--deleteBtn"
+                @click="show_remove_menu = true"
+              >
+                <b-icon icon="trash" />
+                {{ $t("remove") }}
+              </button>
+              <button
+                class="_postcard--primary"
+                type="submit"
+                :disabled="!can_generate || is_saving || is_generating"
+              >
+                <b-icon
+                  v-if="is_saving && !is_generating"
+                  icon="arrow-repeat"
+                  class="_spinner"
+                />
+                <b-icon v-else-if="!is_generating" icon="card-image" />
+                {{
+                  is_generating
+                    ? `${generation_progress}% — ${generation_status}`
+                    : "Generate card"
+                }}
+              </button>
             </div>
             <div
               v-if="is_generating"
@@ -379,19 +403,35 @@
               </button>
             </div>
 
-            <label v-if="is_editing_text" class="_postcard--rules is--editable">
-              <textarea
-                ref="share_text"
-                class="_postcard--cardText"
-                :value="postcard_text"
-                :maxlength="text_max_length"
-                :rows="text_line_count"
-                aria-label="Text"
-                @input="onTextInput"
-                @blur="finishTextEdit"
-              ></textarea>
-            </label>
+            <div v-if="is_editing_text" class="_postcard--rules is--editable">
+              <div class="_postcard--from">
+                <span v-if="postcard_from" class="_postcard--fromLabel"
+                  >From</span
+                >
+                <span class="_postcard--fromName">{{ postcard_from }}</span>
+              </div>
+              <label class="_postcard--textZone">
+                <textarea
+                  ref="share_text"
+                  class="_postcard--cardText"
+                  :value="postcard_text"
+                  :maxlength="text_max_length"
+                  :rows="text_line_count"
+                  aria-label="Text"
+                  @input="onTextInput"
+                  @blur="finishTextEdit"
+                ></textarea>
+              </label>
+            </div>
             <div v-else class="_postcard--rules">
+              <div class="_postcard--rule">
+                <span class="_postcard--ruleText">
+                  <span v-if="postcard_from" class="_postcard--fromLabel"
+                    >From</span
+                  >
+                  <span class="_postcard--fromName">{{ postcard_from }}</span>
+                </span>
+              </div>
               <div
                 v-for="(line, index) in preview_text_lines"
                 :key="'rule-' + index"
@@ -540,7 +580,11 @@
       class="_postcard--player"
       :style="{ '--pc-bottom-bar-height': bottom_bar_height + 'px' }"
     >
-      <vue-plyr :key="audio_url" class="_postcard--plyr" :options="plyr_options">
+      <vue-plyr
+        :key="audio_url"
+        class="_postcard--plyr"
+        :options="plyr_options"
+      >
         <audio
           ref="card_audio"
           :src="audio_url"
@@ -586,18 +630,19 @@ import {
   browsePublicationSlugs,
 } from "@/utils/folderPublications.js";
 
-const QR_PLACEHOLDER_URL =
-  "https://slash.local/postcard/audio-placeholder";
+const QR_PLACEHOLDER_URL = "https://slash.local/postcard/audio-placeholder";
 
 /** Slash orange play disc as SVG data URL — baked into the QR by qr-code-styling */
 const PLAY_ICON_DATA_URL =
   "data:image/svg+xml," +
-  encodeURIComponent(`
+  encodeURIComponent(
+    `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
       <circle cx="32" cy="32" r="32" fill="#ff5829"/>
       <path d="M26 18v28l22-14z" fill="#e5ffdb"/>
     </svg>
-  `.trim());
+  `.trim()
+  );
 
 /** Export resolution: ~12 px per mm */
 const PX_PER_MM = 12;
@@ -610,9 +655,12 @@ const PRINT_A4_HEIGHT = Math.round(210 * PX_PER_MM);
 const COVER_WIDTH = 2000;
 const COVER_HEIGHT = 1420;
 
-const TEXT_LINE_COUNT = 8;
+/** ruled lines on the card: the first one holds "From", the text gets the rest */
+const RULE_COUNT = 10;
+const TEXT_LINE_COUNT = RULE_COUNT - 1;
 const CHARS_PER_LINE = 28;
 const TEXT_MAX_LENGTH = TEXT_LINE_COUNT * CHARS_PER_LINE;
+const FROM_MAX_LENGTH = CHARS_PER_LINE - "From ".length;
 const PREVIEW_WIDE_MQ = "(min-width: 960px)";
 
 export default {
@@ -640,6 +688,7 @@ export default {
       audio_file_name: "",
       audio_media_path: "",
       postcard_text: "",
+      postcard_from: "",
       folder_media_modal_type: "",
       qr_simple_url: "",
       qr_play_url: "",
@@ -652,6 +701,7 @@ export default {
       export_error: "",
       text_line_count: TEXT_LINE_COUNT,
       text_max_length: TEXT_MAX_LENGTH,
+      from_max_length: FROM_MAX_LENGTH,
       show_remove_menu: false,
       pending_image_file: null,
       pending_audio_file: null,
@@ -678,7 +728,9 @@ export default {
       return this.sibling_postcard_slugs.indexOf(this.publication_slug);
     },
     can_browse_postcards() {
-      return this.sibling_index !== -1 && this.sibling_postcard_slugs.length > 1;
+      return (
+        this.sibling_index !== -1 && this.sibling_postcard_slugs.length > 1
+      );
     },
     previous_postcard_slug() {
       return this.sibling_postcard_slugs[this.sibling_index - 1] || "";
@@ -850,6 +902,10 @@ export default {
     has_audio() {
       this.buildQrVariants();
     },
+    // the login modal may resolve after the draft opened
+    connected_as() {
+      this.prefillFrom();
+    },
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.onShareKeydown);
@@ -962,7 +1018,8 @@ export default {
           ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
       )
         return;
-      if (event.key === "ArrowLeft") this.goToPostcard(this.previous_postcard_slug);
+      if (event.key === "ArrowLeft")
+        this.goToPostcard(this.previous_postcard_slug);
       else if (event.key === "ArrowRight")
         this.goToPostcard(this.next_postcard_slug);
     },
@@ -1020,7 +1077,15 @@ export default {
         return this.guessMediaKindFromFilename(file?.$media_filename);
       return "";
     },
+    prefillFrom() {
+      if (this.is_share_view || this.postcard_from) return;
+      this.postcard_from = (this.connected_as?.name || "").slice(
+        0,
+        FROM_MAX_LENGTH
+      );
+    },
     async bootstrapDraft() {
+      this.prefillFrom();
       this.is_loading = true;
       this.load_error = "";
       this.publication = null;
@@ -1077,6 +1142,7 @@ export default {
           }
         }
         this.postcard_text = this.publication.message || "";
+        this.postcard_from = this.publication.from || "";
         if (this.is_share_view) {
           this.hydrateSourceMediasPublic();
         } else {
@@ -1088,8 +1154,7 @@ export default {
         if (code === "folder_not_public") {
           this.load_error = this.$t("folder_not_public");
         } else {
-          this.load_error =
-            code || "Could not load this publication.";
+          this.load_error = code || "Could not load this publication.";
         }
         this.publication = null;
       } finally {
@@ -1241,9 +1306,7 @@ export default {
         });
         const meta_path =
           uploaded_meta?.$path ||
-          (meta_filename
-            ? `${this.publication.$path}/${meta_filename}`
-            : "");
+          (meta_filename ? `${this.publication.$path}/${meta_filename}` : "");
         if (!meta_path) {
           throw new Error("Upload returned no media path.");
         }
@@ -1256,8 +1319,7 @@ export default {
         }
       } catch (err) {
         console.error(err);
-        this.form_error =
-          err?.message || "Upload failed. Please try again.";
+        this.form_error = err?.message || "Upload failed. Please try again.";
         throw err;
       } finally {
         this[uploading_key] = false;
@@ -1314,12 +1376,14 @@ export default {
           new_meta: {
             title,
             message: this.postcard_text,
+            from: this.postcard_from,
             source_medias,
             $public: true,
           },
         });
         this.$set(this.publication, "title", title);
         this.$set(this.publication, "message", this.postcard_text);
+        this.$set(this.publication, "from", this.postcard_from);
         this.$set(this.publication, "source_medias", source_medias);
         this.$set(this.publication, "$public", true);
       } catch (err) {
@@ -1378,8 +1442,7 @@ export default {
           this.$eventHub.$emit("login.openModal");
           this.form_error = this.$t("login");
         } else {
-          this.form_error =
-            err?.message || "Could not save the postcard.";
+          this.form_error = err?.message || "Could not save the postcard.";
         }
       } finally {
         this.is_generating = false;
@@ -1790,7 +1853,7 @@ export default {
       const rules_left = half + pad;
       const rules_right = width - pad;
       const rules_width = rules_right - rules_left;
-      const line_gap = (rules_bottom - rules_top) / TEXT_LINE_COUNT;
+      const line_gap = (rules_bottom - rules_top) / RULE_COUNT;
       const font_size = Math.round(width * 0.0225);
 
       ctx.fillStyle = "#1a1a1a";
@@ -1798,8 +1861,9 @@ export default {
       ctx.textBaseline = "alphabetic";
 
       const lines = this.preview_text_lines;
-      for (let i = 0; i < TEXT_LINE_COUNT; i++) {
+      for (let i = 0; i < RULE_COUNT; i++) {
         const y = rules_top + line_gap * (i + 1);
+        const text_y = y - line_gap * 0.22;
         ctx.strokeStyle = "rgba(73, 128, 200, 0.4)";
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -1807,10 +1871,28 @@ export default {
         ctx.lineTo(rules_right, y);
         ctx.stroke();
 
-        const line = lines[i] || "";
+        if (i === 0) {
+          if (!this.postcard_from) continue;
+          const label = "From ";
+          ctx.fillStyle = "#4980c8";
+          ctx.fillText(label, rules_left, text_y);
+          const label_width = ctx.measureText(label).width;
+          ctx.fillStyle = "#87221d";
+          ctx.font = `600 ${font_size}px "Rubik", "Helvetica Neue", sans-serif`;
+          ctx.fillText(
+            this.postcard_from,
+            rules_left + label_width,
+            text_y,
+            rules_width - label_width
+          );
+          ctx.font = `${font_size}px "Rubik", "Helvetica Neue", sans-serif`;
+          continue;
+        }
+
+        const line = lines[i - 1] || "";
         if (line) {
           ctx.fillStyle = "#1a1a1a";
-          ctx.fillText(line, rules_left, y - line_gap * 0.22, rules_width);
+          ctx.fillText(line, rules_left, text_y, rules_width);
         }
       }
 
@@ -2657,9 +2739,7 @@ export default {
     100%,
     max(
       18rem,
-      calc(
-        (100dvh - var(--pc-card-reserved-height, 10rem)) * 148 / 105
-      )
+      calc((100dvh - var(--pc-card-reserved-height, 10rem)) * 148 / 105)
     )
   );
   margin-inline: auto;
@@ -2780,8 +2860,61 @@ export default {
 ._postcard--rules.is--editable {
   container-type: size;
   position: relative;
+  justify-content: flex-start;
   /* cqi here is the card’s, same measure as the preview lines */
   font-size: max(0.5rem, 2.25cqi);
+  /* one ruled line: 10 per block (From + 9 lines of text) */
+  --pc-line: 10cqh;
+}
+
+._postcard--from {
+  flex: 0 0 var(--pc-line);
+  display: flex;
+  align-items: flex-end;
+  gap: 0.3em;
+  min-width: 0;
+  padding-bottom: 0.12em;
+  border-bottom: 1px solid var(--pc-rule);
+  line-height: 1.2;
+}
+
+._postcard--fromLabel {
+  flex: 0 0 auto;
+  height: 1.2em;
+  color: var(--c-slash-blue);
+}
+
+/* input selector outranks the global input[type="text"] styles */
+._postcard--from input._postcard--fromInput,
+._postcard--fromName {
+  flex: 1 1 auto;
+  display: inline;
+  width: auto;
+  min-width: 0;
+  height: 1.2em;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--c-slash-blue);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2em;
+  caret-color: var(--c-slash-blue);
+
+  &:hover,
+  &:focus {
+    outline: none;
+    border: 0;
+    background: transparent;
+  }
+}
+
+._postcard--textZone {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 ._postcard--cardText {
@@ -2797,14 +2930,14 @@ export default {
   background: repeating-linear-gradient(
     to bottom,
     transparent 0,
-    transparent calc(12.5% - 1px),
-    var(--pc-rule) calc(12.5% - 1px),
-    var(--pc-rule) 12.5%
+    transparent calc(var(--pc-line) - 1px),
+    var(--pc-rule) calc(var(--pc-line) - 1px),
+    var(--pc-rule) var(--pc-line)
   );
   color: var(--pc-ink);
   font-family: inherit;
   font-size: inherit;
-  line-height: 12.5cqh;
+  line-height: var(--pc-line);
   caret-color: var(--c-slash-burgundy);
 
   &::placeholder {
@@ -2920,7 +3053,8 @@ export default {
 ._postcard--stamp:hover,
 ._postcard--stamp:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-slash-orange) 45%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--c-slash-orange) 45%, transparent);
 }
 
 ._postcard--qr {
