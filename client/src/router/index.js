@@ -79,6 +79,14 @@ const routes = [
     component: () => import("@/views/RootPublicationView.vue"),
   },
   {
+    path: "/living-archive",
+    name: "LivingArchive",
+    meta: {
+      static: true,
+    },
+    component: () => import("@/views/LivingArchiveView.vue"),
+  },
+  {
     path: "/legal",
     name: "Legal",
     meta: {

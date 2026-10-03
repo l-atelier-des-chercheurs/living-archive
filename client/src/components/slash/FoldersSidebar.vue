@@ -65,12 +65,10 @@
           documentation, recordings and publications produced by artists and
           partners across Innsbruck, Lisbon, Nantes, Tbilisi and Tunis.
         </p>
-        <a
+        <router-link
           class="_foldersPanel--introLink"
-          :href="site_info.living_archive_url"
-          target="_blank"
-          rel="noopener"
-          >About Living Archive →</a
+          :to="{ name: 'LivingArchive' }"
+          >About Living Archive →</router-link
         >
         <a
           class="_foldersPanel--introLink"
