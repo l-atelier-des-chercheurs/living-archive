@@ -59,13 +59,6 @@
             accept="image/*"
             @change="onImageChange"
           />
-          <input
-            ref="audio_input"
-            class="_postcard--fileInput"
-            type="file"
-            accept="audio/*"
-            @change="onAudioChange"
-          />
 
           <div
             class="_postcard--card is--editable"
@@ -314,14 +307,6 @@
           type="file"
           accept="image/*"
           @change="onImageChange"
-        />
-        <input
-          v-if="is_share_view"
-          ref="audio_input"
-          class="_postcard--fileInput"
-          type="file"
-          accept="audio/*"
-          @change="onAudioChange"
         />
 
         <div
@@ -611,6 +596,13 @@
       @pickMedia="onFolderMediaPicked"
       @close="closeFolderMediaModal"
     />
+
+    <AudioRecorder
+      v-if="show_audio_recorder"
+      :allow_import="true"
+      @file="onAudioFile"
+      @close="show_audio_recorder = false"
+    />
   </div>
 </template>
 
@@ -620,6 +612,7 @@ import SlashLogo from "@/components/nav/SlashLogo.vue";
 import SiteBrand from "@/components/nav/SiteBrand.vue";
 import PickMediaFromFolder from "@/components/slash/PickMediaFromFolder.vue";
 import PostcardShareMenu from "@/components/slash/PostcardShareMenu.vue";
+import AudioRecorder from "@/components/slash/AudioRecorder.vue";
 import {
   getRootPublicationsPath,
   getRootPublicationPath,
@@ -670,9 +663,11 @@ export default {
     SiteBrand,
     PickMediaFromFolder,
     PostcardShareMenu,
+    AudioRecorder,
   },
   data() {
     return {
+      show_audio_recorder: false,
       step: "form",
       publication: null,
       is_loading: true,
@@ -1067,7 +1062,7 @@ export default {
     guessMediaKindFromFilename(filename) {
       const name = String(filename || "").toLowerCase();
       if (/\.(png|jpe?g|gif|webp|avif|bmp|svg)$/.test(name)) return "image";
-      if (/\.(mp3|wav|ogg|m4a|aac|flac|webm)$/.test(name)) return "audio";
+      if (/\.(mp3|wav|ogg|m4a|aac|flac|webm|weba)$/.test(name)) return "audio";
       return "";
     },
     mediaKindOf(file) {
@@ -1644,7 +1639,7 @@ export default {
       this.$refs.image_input && this.$refs.image_input.click();
     },
     openAudioPicker() {
-      this.$refs.audio_input && this.$refs.audio_input.click();
+      this.show_audio_recorder = true;
     },
     async onImageChange(event) {
       const file = event.target.files && event.target.files[0];
@@ -1668,9 +1663,8 @@ export default {
         // form_error already set
       }
     },
-    async onAudioChange(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
+    async onAudioFile(file) {
+      this.show_audio_recorder = false;
       this.revokeObjectUrl(this.audio_url);
       this.audio_file_name = file.name;
       this.audio_url = URL.createObjectURL(file);

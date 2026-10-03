@@ -30,6 +30,9 @@
           multiple
           @change="onFileSelect($event, row)"
         />
+        <p v-if="stacked && row.hint" class="_dropMenu--hint">
+          {{ row.hint }}
+        </p>
       </template>
       <button
         v-else
@@ -42,6 +45,12 @@
         <span v-if="show_labels" class="_dropMenu--label">{{ row.label }}</span>
       </button>
     </div>
+
+    <AudioRecorder
+      v-if="show_audio_recorder"
+      @file="onAudioRecorded"
+      @close="show_audio_recorder = false"
+    />
 
     <UploadFiles
       v-if="files_to_import.length > 0"
@@ -59,9 +68,12 @@
 </template>
 <script>
 import { TEXT_CANVAS_DEFAULT_WIDTH } from "@/utils/textCanvasUtils.js";
+import AudioRecorder from "@/components/slash/AudioRecorder.vue";
+import { AUDIO_ACCEPT, IS_IOS } from "@/utils/audioUtils.js";
 
 export default {
   name: "DropMenuPanel",
+  components: { AudioRecorder },
   props: {
     folder_path: {
       type: String,
@@ -87,10 +99,16 @@ export default {
         // { id: "text", label: this.$t("text"), icon: "file-earmark-text" },
         // { id: "embed", label: this.$t("embed"), icon: "puzzle" },
         {
-          id: "audio",
-          label: this.$t("audio"),
+          id: "record",
+          label: this.$t("record_audio"),
           icon: "record-circle-fill",
-          accept: "audio/*",
+        },
+        {
+          id: "audio",
+          label: this.$t("import_audio"),
+          icon: "file-earmark-music",
+          accept: AUDIO_ACCEPT,
+          hint: IS_IOS ? this.$t("ios_voice_memos_hint") : null,
         },
         {
           id: "file",
@@ -118,6 +136,7 @@ export default {
         // },
       ],
       files_to_import: [],
+      show_audio_recorder: false,
     };
   },
   methods: {
@@ -131,7 +150,15 @@ export default {
         this.files_to_import = files;
       }
     },
+    onAudioRecorded(file) {
+      this.show_audio_recorder = false;
+      this.files_to_import = [file];
+    },
     async handleLabelClick(row) {
+      if (row.id === "record") {
+        this.show_audio_recorder = true;
+        return;
+      }
       if (row.id === "text") {
         const filename = `text-${+new Date()}.txt`;
         const additional_meta = {
@@ -220,6 +247,13 @@ export default {
 
 ._dropMenu--icon {
   display: block;
+}
+
+._dropMenu--hint {
+  margin: calc(var(--spacing) / 2) 0 0;
+  font-size: var(--sl-font-size-small);
+  line-height: 1.35;
+  opacity: 0.8;
 }
 
 ._dropMenu--fileInput {

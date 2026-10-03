@@ -20,6 +20,10 @@ export default {
   contribute: "Contribute",
   contribute_modal_lead: "Add a sound, a file, or a text to this space.",
   untitled_folder: "Untitled folder",
+  import_audio: "Import audio file",
+  start_recording: "Start recording",
+  ios_voice_memos_hint:
+    "From Voice Memos: tap Share → Save to Files, then pick it here.",
 
   // TimelineView
   day_later: "{n} day later | {n} days later",
