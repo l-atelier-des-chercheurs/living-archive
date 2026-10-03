@@ -815,7 +815,85 @@ module.exports = (function () {
     d.stadia_maps_api_key = global.settings.stadia_maps_api_key || "";
     d.public_url = utils.getPublicUrl();
 
+    d.og = await _getPublicationOpenGraph(req, {
+      general_password,
+      name_of_instance,
+    }).catch((err) => {
+      dev.error("Error while building Open Graph tags", err);
+      return null;
+    });
+
     res.render("index", d);
+  }
+
+  // Link previews (WhatsApp, Signal, iMessage…): their crawlers don't run JS,
+  // so publication pages need their title and cover in the server-rendered HTML.
+  async function _getPublicationOpenGraph(
+    req,
+    { general_password, name_of_instance }
+  ) {
+    const match = req.path.match(/^\/(?:publications|postcard)\/([^/]+)/);
+    if (!match) return null;
+
+    let slug;
+    try {
+      slug = decodeURIComponent(match[1]);
+    } catch (err) {
+      return null;
+    }
+    if (!slug || slug === "new" || /[\\/]|\.\./.test(slug)) return null;
+
+    const path_to_folder = `publications/${slug}`;
+    const publication = await folder.getFolder({ path_to_folder });
+
+    // same rule as _getPublicFolder: never leak what the public view hides
+    const is_shareable =
+      publication.$status !== "private" &&
+      (publication.$public === true || publication.$status === "public");
+    if (general_password && !is_shareable) return null;
+
+    const is_postcard = publication.template === "postcard";
+    const site_name = name_of_instance || "Living Archive";
+    let title = publication.title || (is_postcard ? "Postcard" : site_name);
+    if (is_postcard && publication.from) title += ` · From ${publication.from}`;
+
+    let description = String(publication.message || "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (description.length > 200)
+      description = description.slice(0, 199) + "…";
+
+    const base_url =
+      utils.getPublicUrl() ||
+      `${req.get("x-forwarded-proto") || req.protocol}://${req.get("host")}`;
+
+    const og = {
+      title,
+      description,
+      site_name,
+      url: `${base_url}/publications/${encodeURIComponent(slug)}`,
+    };
+
+    const resolution = 640;
+    const thumb = publication.$cover && publication.$cover[resolution];
+    if (thumb) {
+      og.image = `${base_url}/thumbs/${path_to_folder
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/")}/${thumb}`;
+      og.image_type = "image/jpeg";
+      const cover_schema = utils.parseAndCheckSchema({
+        relative_path: path_to_folder,
+      })?.$cover;
+      if (cover_schema?.width && cover_schema?.height) {
+        og.image_width = resolution;
+        og.image_height = Math.round(
+          (resolution * cover_schema.height) / cover_schema.width
+        );
+      }
+    }
+
+    return og;
   }
 
   async function _loadManifest(req, res) {
