@@ -32,11 +32,7 @@
 
         <div v-if="!is_logged_in" class="_gateScreen--body">
           <div class="_gateScreen--field _gateScreen--dodoc">
-            <LoginAs
-              v-if="mode === 'login'"
-              :authors="sorted_authors"
-              @loggedIn="onLoggedIn"
-            />
+            <LoginAs v-if="mode === 'login'" :authors="sorted_authors" />
             <template v-else>
               <button
                 type="button"
@@ -105,6 +101,13 @@ export default {
   },
   async created() {
     await this.fetchAuthors();
+  },
+  watch: {
+    // LoginAs is unmounted as soon as connected_as is set, before it can emit
+    // loggedIn: close here so the user stays on the page they logged in from
+    is_logged_in(now, before) {
+      if (now && !before) this.onLoggedIn();
+    },
   },
   computed: {
     is_logged_in() {
