@@ -237,6 +237,9 @@
           "message": {
             "type": "string"
           },
+          "from": {
+            "type": "string"
+          },
           "source_medias": {
             "type": "array"
           },
