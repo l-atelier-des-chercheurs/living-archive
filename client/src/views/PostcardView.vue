@@ -18,7 +18,7 @@
         <p class="_postcard--lead">
           {{
             step === "form"
-              ? "Tap the photo, the stamp, or the lines."
+              ? "Add an image, a sound and a text to make your card."
               : "Here’s your card. Export, share, or edit it."
           }}
         </p>
@@ -154,6 +154,7 @@
 
               <label class="_postcard--rules is--editable">
                 <textarea
+                  ref="compose_text"
                   class="_postcard--cardText"
                   :value="postcard_text"
                   :maxlength="text_max_length"
@@ -207,6 +208,23 @@
           </div>
 
           <div ref="bottom_bar" class="_postcard--formFooter">
+            <ul class="_postcard--checklist" aria-label="Your card needs">
+              <li
+                v-for="item in card_requirements"
+                :key="item.key"
+                :class="{ 'is--done': item.done }"
+              >
+                <button
+                  type="button"
+                  class="_postcard--checkItem"
+                  :disabled="item.done || is_generating"
+                  @click="item.action"
+                >
+                  <b-icon :icon="item.done ? 'check-circle-fill' : 'circle'" />
+                  {{ item.label }}
+                </button>
+              </li>
+            </ul>
             <div class="_postcard--formActions">
             <button
               v-if="is_draft_mode"
@@ -743,8 +761,41 @@ export default {
     active_qr_url() {
       return this.has_audio ? this.qr_play_url : "";
     },
+    card_requirements() {
+      return [
+        {
+          key: "image",
+          label: "An image",
+          done: Boolean(this.image_url),
+          action: this.openImagePicker,
+        },
+        {
+          key: "audio",
+          label: "A sound",
+          done: this.has_audio,
+          action: this.openAudioPicker,
+        },
+        {
+          key: "text",
+          label: "A text",
+          done: Boolean(this.postcard_text.trim()),
+          action: this.focusComposeText,
+        },
+      ];
+    },
+    missing_requirements_message() {
+      const missing = this.card_requirements
+        .filter((item) => !item.done)
+        .map((item) => item.label.toLowerCase());
+      if (!missing.length) return "";
+      const list =
+        missing.length > 1
+          ? missing.slice(0, -1).join(", ") + " and " + missing.slice(-1)
+          : missing[0];
+      return `Add ${list} to generate the card.`;
+    },
     can_generate() {
-      return Boolean(this.image_url);
+      return this.card_requirements.every((item) => item.done);
     },
     can_export() {
       return Boolean(this.image_url);
@@ -1281,7 +1332,7 @@ export default {
     async generateCard() {
       this.form_error = "";
       if (!this.can_generate) {
-        this.form_error = "Add an image to generate the card.";
+        this.form_error = this.missing_requirements_message;
         return;
       }
       if (this.is_uploading_image || this.is_uploading_audio) {
@@ -1522,6 +1573,9 @@ export default {
       if (url && url.startsWith("blob:")) {
         URL.revokeObjectURL(url);
       }
+    },
+    focusComposeText() {
+      this.$refs.compose_text && this.$refs.compose_text.focus();
     },
     openImagePicker() {
       this.$refs.image_input && this.$refs.image_input.click();
@@ -2006,10 +2060,71 @@ export default {
   gap: 1rem;
 }
 
+._postcard.is--compose {
+  /* room for the fixed footer: checklist + actions + progress */
+  padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
+}
+
 ._postcard--formFooter {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.65rem;
+  margin: 0;
+  padding: 0.75rem clamp(1rem, 4vw, 2rem)
+    calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid color-mix(in srgb, var(--c-slash-blue) 18%, white);
+  background: #fff;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+
+  > * {
+    width: 100%;
+    max-width: 24rem;
+  }
+}
+
+._postcard--checklist {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+._postcard--checkItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--c-slash-burgundy);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    outline: none;
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+._postcard--checklist .is--done ._postcard--checkItem {
+  color: var(--c-slash-blue);
+  font-weight: 400;
 }
 
 ._postcard--formActions {
@@ -2400,16 +2515,16 @@ export default {
 }
 
 ._postcard--primary {
-  background: var(--c-slash-orange);
+  background: var(--c-slash-blue);
   color: #fff;
 }
 
 ._postcard--primary:hover:not(:disabled) {
-  background: #ff6f47;
+  background: color-mix(in srgb, var(--c-slash-blue) 88%, black);
 }
 
 ._postcard--primary:active:not(:disabled) {
-  background: #d9441f;
+  background: color-mix(in srgb, var(--c-slash-blue) 75%, black);
 }
 
 ._postcard--secondary {
@@ -2477,7 +2592,7 @@ export default {
 ._postcard--progressBar {
   height: 100%;
   border-radius: inherit;
-  background: var(--c-slash-orange);
+  background: var(--c-slash-blue);
   transition: width 0.2s ease;
 }
 
@@ -2943,26 +3058,6 @@ export default {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-}
-
-@media (max-width: 639px) {
-  ._postcard.is--compose {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  ._postcard--formFooter {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 40;
-    margin: 0;
-    padding: 0.75rem clamp(1rem, 4vw, 2rem)
-      calc(0.75rem + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid color-mix(in srgb, var(--c-slash-blue) 18%, white);
-    background: #fff;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
-  }
 }
 
 @media (min-width: 640px) {
