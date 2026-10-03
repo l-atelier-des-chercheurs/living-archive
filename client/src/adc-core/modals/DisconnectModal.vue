@@ -1,42 +1,43 @@
 <template>
-  <div
-    v-if="!$api.connected && is_visible"
-    class="_disconnectModal"
-    role="status"
-    :title="$t('connection_lost_in')"
-  >
-    <span class="_disconnectModal--dot" aria-hidden="true" />
-    <span class="_disconnectModal--label">
-      {{ $t("connection_lost_short") }}
-      <span v-if="!is_reconnecting" class="_disconnectModal--countdown">
-        · {{ reconnecting_in }}s
+  <!-- portal: escape any stacking context so it shows above everything -->
+  <portal to="destination">
+    <div
+      v-if="!$api.connected && is_visible"
+      class="_disconnectModal"
+      role="status"
+      :title="$t('connection_lost_in')"
+    >
+      <span class="_disconnectModal--dot" aria-hidden="true" />
+      <span class="_disconnectModal--label">
+        {{ $t("connection_lost_short") }}
+        <span v-if="!is_reconnecting" class="_disconnectModal--countdown">
+          · {{ reconnecting_in }}s
+        </span>
       </span>
-    </span>
 
-    <button
-      type="button"
-      class="_disconnectModal--retry"
-      :disabled="is_reconnecting"
-      @click="reconnectSocket"
-    >
-      <LoaderSpinner v-if="is_reconnecting" class="_spinner" />
-      <template v-else>{{ $t("retry") }}</template>
-    </button>
+      <button
+        type="button"
+        class="_disconnectModal--retry"
+        :disabled="is_reconnecting"
+        @click="reconnectSocket"
+      >
+        <LoaderSpinner v-if="is_reconnecting" class="_spinner" />
+        <template v-else>{{ $t("retry") }}</template>
+      </button>
 
-    <a
-      v-if="
-        failed_attempts >= 3 && $root.app_infos.instance_meta.contactmail
-      "
-      class="_disconnectModal--contact"
-      :href="'mailto:' + $root.app_infos.instance_meta.contactmail"
-      :title="
-        $t('if_issues_contact') + $root.app_infos.instance_meta.contactmail
-      "
-      target="_blank"
-    >
-      <b-icon icon="envelope" :label="$t('if_issues_contact')" />
-    </a>
-  </div>
+      <a
+        v-if="failed_attempts >= 3 && $root.app_infos.instance_meta.contactmail"
+        class="_disconnectModal--contact"
+        :href="'mailto:' + $root.app_infos.instance_meta.contactmail"
+        :title="
+          $t('if_issues_contact') + $root.app_infos.instance_meta.contactmail
+        "
+        target="_blank"
+      >
+        <b-icon icon="envelope" :label="$t('if_issues_contact')" />
+      </a>
+    </div>
+  </portal>
 </template>
 <script>
 // Short drops (phone locked, tab in background) reconnect on their own:
@@ -106,7 +107,8 @@ export default {
     var(--fixed-ui-margins, 0.75rem) +
       max(var(--fixed-bottom-bar-height, 0px), env(safe-area-inset-bottom, 0px))
   );
-  z-index: 1000;
+  // max 32-bit value: above modals, overlays and the paged viewer
+  z-index: 2147483647;
   display: inline-flex;
   align-items: center;
   gap: calc(var(--spacing) / 2);
