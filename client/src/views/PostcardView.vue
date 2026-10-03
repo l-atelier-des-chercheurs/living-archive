@@ -137,6 +137,7 @@
                     v-else-if="active_qr_url"
                     class="_postcard--qr"
                     :src="active_qr_url"
+                    :data-qr-url="qr_data"
                     alt=""
                   />
                 </button>
@@ -205,7 +206,7 @@
             <span>{{ form_error }}</span>
           </div>
 
-          <div class="_postcard--formFooter">
+          <div ref="bottom_bar" class="_postcard--formFooter">
             <div class="_postcard--formActions">
             <button
               v-if="is_draft_mode"
@@ -331,6 +332,7 @@
                   v-else-if="active_qr_url"
                   class="_postcard--qr"
                   :src="active_qr_url"
+                  :data-qr-url="qr_data"
                   alt=""
                 />
               </button>
@@ -442,7 +444,7 @@
       </div>
     </div>
 
-    <div v-if="is_share_view" class="_postcard--shareActions">
+    <div v-if="is_share_view" ref="bottom_bar" class="_postcard--shareActions">
       <div v-if="can_browse_postcards" class="_postcard--browse">
         <button
           type="button"
@@ -513,15 +515,32 @@
       @removedSuccessfully="onPostcardRemoved"
     />
 
-    <audio
+    <!-- shown by the stamp or by opening the card from its QR code -->
+    <div
       v-if="audio_url"
-      ref="card_audio"
-      class="_postcard--cardAudio"
-      :src="audio_url"
-      preload="auto"
-      @ended="onCardAudioEnded"
-      @pause="onCardAudioPaused"
-    />
+      v-show="show_player"
+      class="_postcard--player"
+      :style="{ '--pc-bottom-bar-height': bottom_bar_height + 'px' }"
+    >
+      <vue-plyr :key="audio_url" class="_postcard--plyr" :options="plyr_options">
+        <audio
+          ref="card_audio"
+          :src="audio_url"
+          preload="auto"
+          @ended="onCardAudioEnded"
+          @pause="onCardAudioPaused"
+          @play="is_audio_playing = true"
+        />
+      </vue-plyr>
+      <button
+        type="button"
+        class="_postcard--playerClose"
+        :title="$t('close')"
+        @click="closePlayer"
+      >
+        <b-icon icon="x-lg" :label="$t('close')" />
+      </button>
+    </div>
 
     <PickMediaFromFolder
       v-if="!is_share_view && folder_media_modal_type"
@@ -626,6 +645,11 @@ export default {
       is_wide_layout: false,
       preview_mq: null,
       sibling_postcard_slugs: [],
+      show_player: false,
+      bottom_bar_height: 0,
+      plyr_options: {
+        controls: ["play", "progress", "current-time", "mute", "volume"],
+      },
     };
   },
   computed: {
@@ -690,6 +714,24 @@ export default {
         return resolved.href;
       }
     },
+    /** what the printed QR encodes: the share URL, flagged so the view opens on the player */
+    qr_url() {
+      if (!this.share_url) return "";
+      try {
+        const url = new URL(this.share_url);
+        url.searchParams.set("qr", "1");
+        return url.href;
+      } catch (err) {
+        return this.share_url + "?qr=1";
+      }
+    },
+    /** exactly what the QR encodes (placeholder until the card has a URL) */
+    qr_data() {
+      return this.qr_url || QR_PLACEHOLDER_URL;
+    },
+    is_opened_from_qr() {
+      return this.is_share_view && this.$route.query.qr !== undefined;
+    },
     accessible_folders() {
       return (this.folders || []).filter((folder) =>
         this.canLoggedinSeeFolder({ folder })
@@ -744,6 +786,7 @@ export default {
     if (this.is_share_view) {
       this.step = "card";
       this.loadSiblingPostcards();
+      if (this.is_opened_from_qr && this.has_audio) this.openPlayer();
     }
   },
   mounted() {
@@ -759,6 +802,7 @@ export default {
   },
   beforeDestroy() {
     window.removeEventListener("keydown", this.onShareKeydown);
+    window.removeEventListener("resize", this.updateBottomBarHeight);
     this.teardownPreviewLayout();
     this.stopStampAudio();
     if (
@@ -855,6 +899,10 @@ export default {
       });
     },
     onShareKeydown(event) {
+      if (this.show_player && event.key === "Escape") {
+        this.closePlayer();
+        return;
+      }
       if (!this.can_browse_postcards || this.show_remove_menu) return;
       const target = event.target;
       if (
@@ -1362,24 +1410,13 @@ export default {
       }
       this.is_audio_playing = false;
     },
-    async toggleStampAudio() {
+    toggleStampAudio() {
       if (!this.has_audio || !this.audio_url) return;
-      const audio_el = this.getCardAudioEl();
-      if (!audio_el) return;
-
       if (this.is_audio_playing) {
-        this.stopStampAudio();
+        this.closePlayer();
         return;
       }
-
-      try {
-        audio_el.currentTime = 0;
-        await audio_el.play();
-        this.is_audio_playing = true;
-      } catch (err) {
-        console.error(err);
-        this.is_audio_playing = false;
-      }
+      this.openPlayer({ from_start: true });
     },
     onCardAudioEnded() {
       this.is_audio_playing = false;
@@ -1390,6 +1427,39 @@ export default {
       if (audio_el.paused) {
         this.is_audio_playing = false;
       }
+    },
+    async openPlayer({ from_start = false } = {}) {
+      this.show_player = true;
+      window.addEventListener("resize", this.updateBottomBarHeight);
+      await this.$nextTick();
+      this.updateBottomBarHeight();
+      const audio_el = this.getCardAudioEl();
+      if (!audio_el) return;
+      try {
+        if (from_start || audio_el.ended) audio_el.currentTime = 0;
+        await audio_el.play();
+      } catch (err) {
+        // autoplay refused without a tap first: the player stays visible
+        this.is_audio_playing = false;
+      }
+    },
+    closePlayer() {
+      this.stopStampAudio();
+      this.show_player = false;
+      window.removeEventListener("resize", this.updateBottomBarHeight);
+      if (this.$route.query.qr !== undefined) {
+        const query = { ...this.$route.query };
+        delete query.qr;
+        this.$router.replace({ query }).catch(() => {});
+      }
+    },
+    /** the player floats above the fixed bottom bar, when there is one */
+    updateBottomBarHeight() {
+      const bar = this.$refs.bottom_bar;
+      this.bottom_bar_height =
+        bar && window.getComputedStyle(bar).position === "fixed"
+          ? bar.offsetHeight
+          : 0;
     },
     async buildQrVariants() {
       this.revokeObjectUrl(this.qr_simple_url);
@@ -1408,7 +1478,7 @@ export default {
           width: 512,
           height: 512,
           type: "canvas",
-          data: this.share_url || QR_PLACEHOLDER_URL,
+          data: this.qr_data,
           margin: 8,
           qrOptions: {
             errorCorrectionLevel: with_play ? "H" : "M",
@@ -2765,8 +2835,76 @@ export default {
   border-radius: 2px;
 }
 
-._postcard--cardAudio {
-  display: none;
+._postcard--player {
+  position: fixed;
+  left: 50%;
+  bottom: calc(
+    var(--pc-bottom-bar-height, 0px) + var(--spacing, 1rem) * 2 +
+      env(safe-area-inset-bottom, 0px)
+  );
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: calc(100% - 2rem);
+  max-width: 350px;
+  padding: 0.25rem 0.4rem 0.25rem 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--c-slash-blue) 18%, white);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  transform: translateX(-50%);
+  animation: postcardPlayerIn 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes postcardPlayerIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+._postcard--plyr {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+._postcard--player .plyr {
+  --plyr-color-main: var(--c-slash-orange);
+  --plyr-audio-controls-background: transparent;
+  --plyr-audio-control-color: var(--c-slash-burgundy);
+  min-width: 0;
+}
+
+._postcard--player .plyr__controls {
+  padding: 0.25rem;
+}
+
+._postcard--playerClose {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pc-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+._postcard--playerClose:hover,
+._postcard--playerClose:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--c-slash-blue) 12%, white);
+  color: var(--c-slash-burgundy);
 }
 
 ._postcard--rules {
