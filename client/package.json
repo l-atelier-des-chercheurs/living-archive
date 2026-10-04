@@ -27,6 +27,7 @@
     "fix-webm-duration": "^1.0.6",
     "flickity": "^3.0.0",
     "flickity-imagesloaded": "^2.0.0",
+    "heic-to": "^1.6.5",
     "highlight.js": "^11.11.1",
     "imagetracerjs": "^1.2.6",
     "infinite-viewer": "^0.29.1",

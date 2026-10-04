@@ -1642,9 +1642,37 @@ export default {
     openAudioPicker() {
       this.show_audio_recorder = true;
     },
+    isHeicFile(file) {
+      return (
+        /^image\/hei[cf]/i.test(file.type || "") ||
+        /\.hei[cf]$/i.test(file.name || "")
+      );
+    },
+    // Only Safari can display HEIC: convert to JPEG so the preview, the cover
+    // canvas and the shared card work everywhere.
+    async convertHeicToJpeg(file) {
+      const { heicTo } = await import("heic-to");
+      const blob = await heicTo({ blob: file, type: "image/jpeg", quality: 0.9 });
+      const name = file.name.replace(/\.hei[cf]$/i, "") + ".jpg";
+      return new File([blob], name, { type: "image/jpeg" });
+    },
     async onImageChange(event) {
-      const file = event.target.files && event.target.files[0];
+      let file = event.target.files && event.target.files[0];
+      event.target.value = "";
       if (!file) return;
+      if (this.isHeicFile(file)) {
+        this.is_uploading_image = true;
+        try {
+          file = await this.convertHeicToJpeg(file);
+        } catch (err) {
+          console.error(err);
+          this.form_error =
+            "This HEIC image could not be read. Please pick a JPEG or PNG.";
+          return;
+        } finally {
+          this.is_uploading_image = false;
+        }
+      }
       this.revokeObjectUrl(this.image_url);
       this.image_file_name = file.name;
       this.image_url = URL.createObjectURL(file);
