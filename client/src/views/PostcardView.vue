@@ -334,7 +334,7 @@
           </div>
 
           <div class="_postcard--rightPane">
-            <div class="_postcard--stampSlot">
+            <div v-if="has_audio || is_editing" class="_postcard--stampSlot">
               <button
                 v-if="has_audio"
                 type="button"
@@ -407,7 +407,7 @@
               <div class="_postcard--rule">
                 <span class="_postcard--ruleText">
                   <span v-if="postcard_from" class="_postcard--fromLabel"
-                    >From</span
+                    >From </span
                   >
                   <span class="_postcard--fromName">{{ postcard_from }}</span>
                 </span>
@@ -1914,7 +1914,7 @@ export default {
 
         const line = lines[i - 1] || "";
         if (line) {
-          ctx.fillStyle = "#1a1a1a";
+          ctx.fillStyle = "#262626";
           ctx.fillText(line, rules_left, text_y, rules_width);
         }
       }
