@@ -17,6 +17,8 @@ export default {
     },
     { name: "L’art Rue", url: "https://lartrue.org/" },
     { name: "Mutant Radio", url: "https://mutantradio.net/" },
+    { name: "OpenSpace", url: "https://openspace-innsbruck.com/" },
+    { name: "Casa Capitão", url: "https://casa-capitao.com/" },
   ],
 
   contacts: [
