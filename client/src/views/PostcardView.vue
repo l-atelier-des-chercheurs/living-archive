@@ -2755,10 +2755,14 @@ export default {
   );
   margin-inline: auto;
   background: var(--pc-paper);
-  border: 2px solid var(--c-slash-blue);
-  box-shadow: 0 14px 36px
-    color-mix(in srgb, var(--c-slash-blue) 18%, transparent);
+  /* frame drawn outside the box so the inside keeps the exported proportions */
+  box-shadow: 0 0 0 2px var(--c-slash-blue),
+    0 14px 36px color-mix(in srgb, var(--c-slash-blue) 18%, transparent);
   overflow: hidden;
+
+  /* same measures as renderPostcardCanvas, in card widths (h = w * 105 / 148) */
+  --pc-pad: 3.193cqi; /* 4.5% of the height */
+  --pc-stamp: 19.865cqi; /* 28% of the height */
 }
 
 ._postcard--imagePane.is--hit {
@@ -2869,22 +2873,18 @@ export default {
 }
 
 ._postcard--rules.is--editable {
-  container-type: size;
   position: relative;
   justify-content: flex-start;
-  /* cqi here is the card’s, same measure as the preview lines */
-  font-size: max(0.5rem, 2.25cqi);
-  /* one ruled line: 10 per block (From + 9 lines of text) */
-  --pc-line: 10cqh;
 }
 
 ._postcard--from {
   flex: 0 0 var(--pc-line);
   display: flex;
   align-items: flex-end;
-  gap: 0.3em;
+  /* width of the space in "From " on the exported card */
+  gap: 0.25em;
   min-width: 0;
-  padding-bottom: 0.12em;
+  padding-bottom: var(--pc-baseline-pad);
   border-bottom: 1px solid var(--pc-rule);
   line-height: 1.2;
 }
@@ -2908,11 +2908,11 @@ export default {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--c-slash-blue);
+  color: var(--c-slash-burgundy);
   font: inherit;
   font-weight: 600;
   line-height: 1.2em;
-  caret-color: var(--c-slash-blue);
+  caret-color: var(--c-slash-burgundy);
 
   &:hover,
   &:focus {
@@ -2929,12 +2929,15 @@ export default {
 }
 
 ._postcard--cardText {
+  /* moves each baseline down to where the canvas writes it (22% of a line
+     above its rule); the box grows by the same amount so it never scrolls */
+  --pc-text-shift: max(0px, calc(0.28 * var(--pc-line) - 0.3425em));
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
   width: 100%;
-  height: 100%;
+  height: calc(100% + var(--pc-text-shift));
   margin: 0;
-  padding: 0;
+  padding: var(--pc-text-shift) 0 0;
   border: 0;
   resize: none;
   overflow: hidden;
@@ -2967,8 +2970,7 @@ export default {
 ._postcard--stampSlot {
   position: relative;
   align-self: flex-end;
-  width: 28%;
-  min-width: 3rem;
+  width: var(--pc-stamp);
 }
 
 ._postcard--stampSlot ._postcard--stamp {
@@ -3037,24 +3039,36 @@ export default {
 }
 
 ._postcard--rightPane {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.65rem 0.7rem 0.8rem;
+  gap: calc(var(--pc-pad) * 0.9);
+  padding: var(--pc-pad);
   min-width: 0;
   background: var(--pc-paper);
+
+  /* blue fold between photo and text */
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    left: -2px;
+    width: max(1px, 0.15cqi);
+    background: var(--c-slash-blue);
+  }
 }
 
 ._postcard--stamp {
   position: relative;
   align-self: flex-end;
-  width: 28%;
-  min-width: 3rem;
+  width: var(--pc-stamp);
   aspect-ratio: 1;
   padding: 0;
   margin: 0;
   background: #fff;
-  border: 2px solid var(--c-slash-burgundy);
+  border: max(2px, 0.284cqi) solid var(--c-slash-burgundy);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
   color: inherit;
   font: inherit;
@@ -3073,7 +3087,8 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 4%;
+  /* with the border, insets the code by 6% of the stamp like the canvas */
+  padding: 4.7%;
   transition: opacity 0.2s ease;
   pointer-events: none;
 }
@@ -3168,12 +3183,20 @@ export default {
 }
 
 ._postcard--rules {
+  container-type: size;
   position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   min-height: 0;
+  /* cqi here is the card’s, same measure as the canvas font */
+  font-size: max(0.5rem, 2.25cqi);
+  /* one ruled line: 10 per block (From + 9 lines of text) */
+  --pc-line: 10cqh;
+  /* puts a single line’s baseline 22% of a line above its rule, as the
+     canvas does (0.26em ≈ Rubik’s descent + half-leading at line-height 1.2) */
+  --pc-baseline-pad: max(0px, calc(0.22 * var(--pc-line) - 0.26em));
 }
 
 ._postcard--rule {
@@ -3190,9 +3213,8 @@ export default {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: clip;
-  font-size: max(0.5rem, 2.25cqi);
   line-height: 1.2;
-  padding-bottom: 0.12em;
+  padding-bottom: var(--pc-baseline-pad);
   color: var(--pc-ink);
 }
 
