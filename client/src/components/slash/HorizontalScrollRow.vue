@@ -60,10 +60,29 @@ export default {
     },
     scrollBy(direction) {
       const el = this.$refs.track;
-      el.scrollBy({
-        left: direction * el.clientWidth * 0.8,
-        behavior: "smooth",
-      });
+      // width of the faded edges: cards land just past them, fully visible
+      const fade = parseFloat(getComputedStyle(el).scrollPaddingLeft) || 0;
+      const items = Array.from(el.children);
+      const visible_right = el.scrollLeft + el.clientWidth - fade;
+
+      let item;
+      if (direction > 0) {
+        // first card cut off by the right fade becomes the leftmost one
+        item = items.find(
+          (i) => i.offsetLeft + i.offsetWidth > visible_right + 1
+        );
+      } else {
+        // go back one view, starting on the first card that fits whole
+        const target = el.scrollLeft - (el.clientWidth - 2 * fade);
+        item = items.find((i) => i.offsetLeft - fade >= target - 1);
+      }
+
+      let left = item ? item.offsetLeft - fade : null;
+      // card wider than the view, or nothing found: fall back to a page
+      if (left === null || Math.abs(left - el.scrollLeft) < 2)
+        left = el.scrollLeft + direction * (el.clientWidth - 2 * fade);
+
+      el.scrollTo({ left, behavior: "smooth" });
     },
   },
 };
@@ -73,11 +92,16 @@ export default {
 ._hScrollRow {
   --hscroll-arrow-bg: var(--c-slash-blue);
   --hscroll-arrow-bg-hover: var(--c-slash-blue, #87221d);
+  --hscroll-fade-w: 5rem;
 
   position: relative;
   min-width: 0;
   // own stacking context: hovered cards (transform) can't rise above the arrows
   isolation: isolate;
+
+  @media (max-width: 600px) {
+    --hscroll-fade-w: 3.5rem;
+  }
 }
 
 ._hScrollRow--track {
@@ -90,6 +114,8 @@ export default {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
+  // snapped cards stop past the faded edges instead of under them
+  scroll-padding-inline: var(--hscroll-fade-w);
   scrollbar-width: none;
   // room for the cards' hover lift and shadow, which overflow would clip
   padding: 6px 0 calc(var(--spacing) * 1.25);
@@ -111,7 +137,7 @@ export default {
   bottom: calc(var(--spacing) * 1.25);
   display: flex;
   align-items: center;
-  width: 5rem;
+  width: var(--hscroll-fade-w);
   padding: 0 calc(var(--spacing) / 2);
   border: none;
   border-radius: 0;
@@ -144,6 +170,10 @@ export default {
     transform: scale(1.08);
     animation: none;
   }
+
+  @media (max-width: 600px) {
+    padding: 0 calc(var(--spacing) / 4);
+  }
 }
 
 ._hScrollRow--circle {
@@ -162,6 +192,12 @@ export default {
 
   .is--next & {
     animation: hScrollNudgeNext 1.8s ease-in-out infinite;
+  }
+
+  @media (max-width: 600px) {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.125rem;
   }
 }
 
