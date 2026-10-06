@@ -218,6 +218,15 @@
           >
             <b-icon icon="exclamation-triangle" />
             <span>{{ form_error }}</span>
+            <button
+              v-if="generation_failed && !is_generating"
+              type="button"
+              class="_postcard--alertAction"
+              @click="generateCard"
+            >
+              <b-icon icon="arrow-clockwise" />
+              {{ $t("retry") }}
+            </button>
           </div>
 
           <div ref="bottom_bar" class="_postcard--formFooter">
@@ -603,6 +612,25 @@
       @file="onAudioFile"
       @close="show_audio_recorder = false"
     />
+
+    <BaseModal2
+      v-if="pending_leave"
+      :title="$t('confirm_cancel_changes')"
+      @close="cancelLeave"
+    >
+      <p>Your postcard hasn’t been generated yet and will be lost.</p>
+      <template slot="footer">
+        <SaveCancelButtons
+          :cancel_text="$t('continue_editing')"
+          cancel_icon="none"
+          :save_text="$t('discard_changes')"
+          save_icon="x-circle"
+          :save_is_destructive="true"
+          @save="confirmLeave"
+          @cancel="cancelLeave"
+        />
+      </template>
+    </BaseModal2>
   </div>
 </template>
 
@@ -700,6 +728,12 @@ export default {
       pending_audio_file: null,
       generation_progress: 0,
       generation_status: "",
+      generation_failed: false,
+      // slug of the folder a draft generation created, so a retry reuses it
+      draft_slug: "",
+      // route guard callback waiting for the "leave without generating?" answer
+      pending_leave: null,
+      allow_leave: false,
       preview_open: false,
       is_editing: false,
       is_editing_text: false,
@@ -744,6 +778,13 @@ export default {
     },
     is_draft_mode() {
       return this.$route.name === "PostcardNew";
+    },
+    /** the create page holds content that only lives in this tab until generated */
+    has_unsaved_draft() {
+      return (
+        this.is_draft_mode &&
+        Boolean(this.image_url || this.has_audio || this.postcard_text.trim())
+      );
     },
     show_cancel_or_remove() {
       return this.is_draft_mode || this.can_edit;
@@ -900,7 +941,13 @@ export default {
     this.initPreviewLayout();
     if (this.is_share_view) {
       window.addEventListener("keydown", this.onShareKeydown);
+    } else {
+      window.addEventListener("beforeunload", this.onBeforeUnload);
     }
+  },
+  beforeRouteLeave(to, from, next) {
+    if (this.allow_leave || !this.has_unsaved_draft) return next();
+    this.pending_leave = next;
   },
   watch: {
     has_audio() {
@@ -921,6 +968,7 @@ export default {
   beforeDestroy() {
     document.documentElement.style.removeProperty("--fixed-bottom-bar-height");
     window.removeEventListener("keydown", this.onShareKeydown);
+    window.removeEventListener("beforeunload", this.onBeforeUnload);
     window.removeEventListener("resize", this.updateBottomBarHeight);
     this.teardownPreviewLayout();
     this.stopStampAudio();
@@ -968,6 +1016,23 @@ export default {
       } else if (was_wide) {
         this.preview_open = false;
       }
+    },
+    onBeforeUnload(event) {
+      if (this.allow_leave || !this.has_unsaved_draft) return;
+      // browsers show their own wording for reloads and tab closes
+      event.preventDefault();
+      event.returnValue = "";
+    },
+    confirmLeave() {
+      const next = this.pending_leave;
+      this.pending_leave = null;
+      this.allow_leave = true;
+      next && next();
+    },
+    cancelLeave() {
+      const next = this.pending_leave;
+      this.pending_leave = null;
+      next && next(false);
     },
     openPreview() {
       this.preview_open = true;
@@ -1354,26 +1419,27 @@ export default {
         err.code = "login_required";
         throw err;
       }
-      const title = titleFromPostcardText(this.postcard_text, {
-        fallback: this.$t("template_postcard"),
-      });
-      const additional_meta = buildPublicationCreateMeta({
-        title,
-        template_key: "postcard",
-        at_root: true,
-        admin_path: this.connected_as.$path,
-        requested_slug: `postcard-${Date.now()}`,
-      });
-      const slug = await this.$api.createFolder({
-        path: getRootPublicationsPath(),
-        additional_meta,
-      });
-      const path = getRootPublicationPath(slug);
+      if (!this.draft_slug) {
+        const title = titleFromPostcardText(this.postcard_text, {
+          fallback: this.$t("template_postcard"),
+        });
+        const additional_meta = buildPublicationCreateMeta({
+          title,
+          template_key: "postcard",
+          at_root: true,
+          admin_path: this.connected_as.$path,
+          requested_slug: `postcard-${Date.now()}`,
+        });
+        this.draft_slug = await this.$api.createFolder({
+          path: getRootPublicationsPath(),
+          additional_meta,
+        });
+      }
+      const path = getRootPublicationPath(this.draft_slug);
       this.publication = await this.$api.getFolder({ path });
       if (!this.isRoomJoined(path)) {
         this.$api.join({ room: path });
       }
-      return slug;
     },
     async persistMeta() {
       if (!this.publication?.$path) return;
@@ -1418,43 +1484,21 @@ export default {
       if (this.is_generating) return;
 
       this.is_generating = true;
+      this.generation_failed = false;
       this.setGenerationProgress(0, this.$t("postcard_progress_starting"));
       try {
-        if (this.is_draft_mode) {
-          await this.generateFromDraft();
-        } else {
-          this.setGenerationProgress(40, this.$t("postcard_progress_saving"));
-          await this.persistMeta();
-          this.setGenerationProgress(70, this.$t("postcard_progress_cover"));
-          await this.uploadPostcardCover();
-          this.setGenerationProgress(100, this.$t("postcard_progress_done"));
-          await this.$router.replace({
-            name: "PublicPublication",
-            params: { publication_slug: this.publication_slug },
-          });
-        }
+        await this.runGeneration();
         this.export_error = "";
       } catch (err) {
         console.error(err);
-        if (
-          this.is_draft_mode &&
-          this.publication?.$path &&
-          this.publication_slug
-        ) {
-          try {
-            await this.$router.replace({
-              name: "Postcard",
-              params: { publication_slug: this.publication_slug },
-            });
-          } catch (nav_err) {
-            console.warn(nav_err);
-          }
-        }
         if (err?.code === "login_required") {
           this.$eventHub.$emit("login.openModal");
           this.form_error = this.$t("login");
         } else {
-          this.form_error = err?.message || "Could not save the postcard.";
+          // stay on this page with everything in memory: a retry resumes
+          // from the folder and uploads that already went through
+          this.generation_failed = true;
+          this.form_error = this.generationErrorMessage(err);
         }
       } finally {
         this.is_generating = false;
@@ -1462,9 +1506,28 @@ export default {
         this.generation_status = "";
       }
     },
-    async generateFromDraft() {
-      this.setGenerationProgress(8, this.$t("postcard_progress_creating"));
-      const slug = await this.createPublicationFolder();
+    isNetworkError(err) {
+      if (typeof navigator !== "undefined" && navigator.onLine === false)
+        return true;
+      const code = err?.code || "";
+      const message = err?.message || "";
+      return (
+        ["ERR_NETWORK", "ECONNABORTED", "ETIMEDOUT"].includes(code) ||
+        /network/i.test(message)
+      );
+    },
+    generationErrorMessage(err) {
+      if (this.isNetworkError(err)) {
+        return "The connection dropped while generating the card. Your card is kept here: check your connection and retry.";
+      }
+      return err?.message || "Could not generate the card. Please retry.";
+    },
+    /** each step is skipped when a previous attempt already did it */
+    async runGeneration() {
+      if (!this.publication?.$path) {
+        this.setGenerationProgress(8, this.$t("postcard_progress_creating"));
+        await this.createPublicationFolder();
+      }
 
       if (this.pending_image_file) {
         this.setGenerationProgress(20, this.$t("postcard_progress_image"));
@@ -1504,9 +1567,11 @@ export default {
       await this.uploadPostcardCover();
 
       this.setGenerationProgress(98, this.$t("postcard_progress_done"));
+      // the card is saved: leaving the create page loses nothing now
+      this.allow_leave = true;
       await this.$router.replace({
         name: "PublicPublication",
-        params: { publication_slug: slug },
+        params: { publication_slug: this.publication_slug },
       });
       this.setGenerationProgress(100, this.$t("postcard_progress_done"));
     },
@@ -1695,11 +1760,9 @@ export default {
       this.image_media_path = "";
       this.form_error = "";
       this.export_error = "";
-      if (this.is_draft_mode) {
-        this.pending_image_file = file;
-        return;
-      }
-      this.pending_image_file = null;
+      // stays pending until an upload succeeds, so generating retries it
+      this.pending_image_file = file;
+      if (this.is_draft_mode) return;
       try {
         await this.uploadMediaFile("image", file);
         await this.persistMediaSelection();
@@ -1715,11 +1778,8 @@ export default {
       this.audio_url = URL.createObjectURL(file);
       this.audio_media_path = "";
       this.form_error = "";
-      if (this.is_draft_mode) {
-        this.pending_audio_file = file;
-        return;
-      }
-      this.pending_audio_file = null;
+      this.pending_audio_file = file;
+      if (this.is_draft_mode) return;
       try {
         await this.uploadMediaFile("audio", file);
         await this.persistMediaSelection();
@@ -2690,6 +2750,27 @@ export default {
     margin-top: 0.1em;
     font-size: 1.15rem;
     color: var(--pc-alert-color);
+  }
+}
+
+._postcard--alertAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--pc-alert-color);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pc-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  .b-icon {
+    margin-top: 0;
+    font-size: 0.95rem;
   }
 }
 

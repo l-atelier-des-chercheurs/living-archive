@@ -65,6 +65,11 @@ const routes = [
     redirect: { name: "PostcardNew" },
   },
   {
+    // short link to print or share: opens a blank postcard right away
+    path: "/cp",
+    redirect: { name: "PostcardNew" },
+  },
+  {
     // also loaded by the server (puppeteer) to export PDF/PNG, with ?superadmintoken=
     path: "/publications/:publication_slug",
     name: "PublicPublication",
