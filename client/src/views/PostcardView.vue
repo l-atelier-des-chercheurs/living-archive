@@ -158,6 +158,7 @@
                     :disabled="is_generating"
                     aria-label="From"
                   />
+                  <span class="_postcard--date">{{ postcard_date_label }}</span>
                 </label>
                 <label class="_postcard--textZone">
                   <textarea
@@ -389,6 +390,7 @@
                   >From</span
                 >
                 <span class="_postcard--fromName">{{ postcard_from }}</span>
+                <span class="_postcard--date">{{ postcard_date_label }}</span>
               </div>
               <label class="_postcard--textZone">
                 <textarea
@@ -405,11 +407,14 @@
             </div>
             <div v-else class="_postcard--rules">
               <div class="_postcard--rule">
-                <span class="_postcard--ruleText">
-                  <span v-if="postcard_from" class="_postcard--fromLabel"
-                    >From </span
-                  >
-                  <span class="_postcard--fromName">{{ postcard_from }}</span>
+                <span class="_postcard--ruleText is--from">
+                  <span class="_postcard--fromLine">
+                    <span v-if="postcard_from" class="_postcard--fromLabel"
+                      >From </span
+                    >
+                    <span class="_postcard--fromName">{{ postcard_from }}</span>
+                  </span>
+                  <span class="_postcard--date">{{ postcard_date_label }}</span>
                 </span>
               </div>
               <div
@@ -711,6 +716,17 @@ export default {
   computed: {
     is_share_view() {
       return this.$route.name === "PublicPublication";
+    },
+    // "Tue 6 Oct, 8:12": when the card was written, short enough for line one
+    postcard_date_label() {
+      const date = new Date(this.publication?.$date_created || Date.now());
+      const day = date.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      return `${day}, ${date.getHours()}:${minutes}`;
     },
     sibling_index() {
       return this.sibling_postcard_slugs.indexOf(this.publication_slug);
@@ -1895,9 +1911,20 @@ export default {
         ctx.stroke();
 
         if (i === 0) {
+          // date, small and right-aligned
+          ctx.fillStyle = "#4980c8";
+          ctx.font = `${Math.round(
+            font_size * 0.7
+          )}px "Rubik", "Helvetica Neue", sans-serif`;
+          ctx.textAlign = "right";
+          ctx.fillText(this.postcard_date_label, rules_right, text_y);
+          const date_width =
+            ctx.measureText(this.postcard_date_label).width + font_size * 0.5;
+          ctx.textAlign = "left";
+          ctx.font = `${font_size}px "Rubik", "Helvetica Neue", sans-serif`;
+
           if (!this.postcard_from) continue;
           const label = "From ";
-          ctx.fillStyle = "#4980c8";
           ctx.fillText(label, rules_left, text_y);
           const label_width = ctx.measureText(label).width;
           ctx.fillStyle = "#87221d";
@@ -1906,7 +1933,7 @@ export default {
             this.postcard_from,
             rules_left + label_width,
             text_y,
-            rules_width - label_width
+            rules_width - label_width - date_width
           );
           ctx.font = `${font_size}px "Rubik", "Helvetica Neue", sans-serif`;
           continue;
@@ -2922,6 +2949,22 @@ export default {
   }
 }
 
+/* small and right-aligned on the From line; the padding puts its baseline
+   on the name's (a smaller font has a shorter descent) */
+._postcard--date {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-left: 0.5em;
+  color: var(--c-slash-blue);
+  font-size: 0.7em;
+  line-height: 1.2;
+  white-space: nowrap;
+
+  ._postcard--from & {
+    padding-bottom: 0.11em;
+  }
+}
+
 ._postcard--textZone {
   position: relative;
   flex: 1 1 auto;
@@ -3216,6 +3259,17 @@ export default {
   line-height: 1.2;
   padding-bottom: var(--pc-baseline-pad);
   color: var(--pc-ink);
+
+  &.is--from {
+    display: flex;
+    align-items: baseline;
+  }
+}
+
+._postcard--fromLine {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 ._postcard--mark {
