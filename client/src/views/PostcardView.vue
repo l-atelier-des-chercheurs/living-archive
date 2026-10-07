@@ -17,7 +17,7 @@
         <p class="_postcard--lead">
           {{
             step === "form"
-              ? "Add an image, a sound and a text to make your card."
+              ? "Add an image with a sound, or a video. Words are optional."
               : "Here’s your card. Export, share, or edit it."
           }}
         </p>
@@ -51,7 +51,7 @@
             ref="image_input"
             class="_postcard--fileInput"
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             @change="onImageChange"
           />
 
@@ -68,19 +68,32 @@
                 (!is_draft_mode && !publication) ||
                 is_uploading_image
               "
-              :title="image_file_name || 'Add an image'"
+              :title="image_file_name || 'Add an image or a video'"
               @click="openImagePicker"
             >
+              <video
+                v-if="image_url && visual_is_video"
+                class="_postcard--image"
+                :src="video_preview_src"
+                muted
+                playsinline
+                preload="metadata"
+              />
               <img
-                v-if="image_url"
+                v-else-if="image_url"
                 class="_postcard--image"
                 :src="image_url"
                 alt=""
               />
               <span v-else class="_postcard--zoneHint">
                 <b-icon icon="image" />
-                Add an image
+                Add an image or a video
               </span>
+              <b-icon
+                v-if="image_url && visual_is_video"
+                icon="camera-video-fill"
+                class="_postcard--videoBadge"
+              />
               <span
                 v-if="image_url && !is_uploading_image"
                 class="_postcard--zoneHint is--overlay"
@@ -96,8 +109,21 @@
 
             <div class="_postcard--rightPane">
               <div class="_postcard--stampRow">
+                <div
+                  v-if="visual_is_video"
+                  class="_postcard--stamp is--static"
+                  title="Links to the card, where the video plays"
+                >
+                  <img
+                    v-if="active_qr_url"
+                    class="_postcard--qr"
+                    :src="active_qr_url"
+                    :data-qr-url="qr_data"
+                    alt=""
+                  />
+                </div>
                 <button
-                  v-if="!has_audio"
+                  v-else-if="!has_audio"
                   type="button"
                   class="_postcard--stamp is--empty"
                   :disabled="
@@ -186,11 +212,11 @@
                 !accessible_folders.length ||
                 is_uploading_image
               "
-              aria-label="Image from a folder"
-              @click="openFolderMediaModal('image')"
+              aria-label="Image or video from a folder"
+              @click="openFolderMediaModal('visual')"
             >
               <b-icon icon="image" />
-              Image from a folder
+              Image or video from a folder
             </button>
             <button
               type="button"
@@ -198,7 +224,8 @@
               :disabled="
                 is_generating ||
                 !accessible_folders.length ||
-                is_uploading_audio
+                is_uploading_audio ||
+                visual_is_video
               "
               aria-label="Sound from a folder"
               @click="openFolderMediaModal('audio')"
@@ -310,7 +337,7 @@
           ref="image_input"
           class="_postcard--fileInput"
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           @change="onImageChange"
         />
 
@@ -321,8 +348,31 @@
           aria-label="Postcard"
         >
           <div class="_postcard--imagePane">
+            <template v-if="image_url && visual_is_video">
+              <!-- plays in place, on the card -->
+              <video
+                ref="card_video"
+                class="_postcard--image"
+                :src="video_preview_src"
+                playsinline
+                preload="metadata"
+                @click="toggleCardVideo"
+                @play="is_video_playing = true"
+                @pause="is_video_playing = false"
+                @ended="is_video_playing = false"
+              />
+              <button
+                v-if="!is_video_playing && !is_editing"
+                type="button"
+                class="_postcard--videoPlay"
+                aria-label="Play video"
+                @click="toggleCardVideo"
+              >
+                <b-icon icon="play-fill" />
+              </button>
+            </template>
             <img
-              v-if="image_url"
+              v-else-if="image_url"
               class="_postcard--image"
               :src="image_url"
               alt=""
@@ -332,7 +382,7 @@
               v-if="is_editing"
               type="button"
               class="_postcard--zoneEdit"
-              title="Change image"
+              title="Change image or video"
               :disabled="is_uploading_image"
               @click="openImagePicker"
             >
@@ -344,9 +394,21 @@
           </div>
 
           <div class="_postcard--rightPane">
-            <div v-if="has_audio || is_editing" class="_postcard--stampSlot">
+            <div
+              v-if="has_audio || visual_is_video || is_editing"
+              class="_postcard--stampSlot"
+            >
+              <div v-if="visual_is_video" class="_postcard--stamp is--static">
+                <img
+                  v-if="active_qr_url"
+                  class="_postcard--qr"
+                  :src="active_qr_url"
+                  :data-qr-url="qr_data"
+                  alt=""
+                />
+              </div>
               <button
-                v-if="has_audio"
+                v-else-if="has_audio"
                 type="button"
                 class="_postcard--stamp"
                 :class="{ 'is--playing': is_audio_playing }"
@@ -702,6 +764,9 @@ export default {
       is_uploading_image: false,
       is_uploading_audio: false,
       folders: [],
+      // the left pane holds an image or a video: image_* fields hold either
+      visual_is_video: false,
+      is_video_playing: false,
       image_url: "",
       image_file_name: "",
       image_media_path: "",
@@ -855,30 +920,38 @@ export default {
     has_audio() {
       return Boolean(this.audio_url || this.audio_media_path);
     },
+    /** a sound card's stamp plays it; a video card's stamp is a plain QR */
+    has_stamp() {
+      return this.has_audio || this.visual_is_video;
+    },
     active_qr_url() {
-      return this.has_audio ? this.qr_play_url : "";
+      if (this.has_audio) return this.qr_play_url;
+      if (this.visual_is_video) return this.qr_simple_url;
+      return "";
+    },
+    // #t= makes Safari paint a first frame instead of a blank box
+    video_preview_src() {
+      return this.image_url ? this.image_url + "#t=0.1" : "";
     },
     card_requirements() {
-      return [
+      // the text is optional; a video brings its own sound
+      const requirements = [
         {
           key: "image",
-          label: "An image",
+          label: "An image or a video",
           done: Boolean(this.image_url),
           action: this.openImagePicker,
         },
-        {
+      ];
+      if (!this.visual_is_video) {
+        requirements.push({
           key: "audio",
           label: "A sound",
           done: this.has_audio,
           action: this.openAudioPicker,
-        },
-        {
-          key: "text",
-          label: "A text",
-          done: Boolean(this.postcard_text.trim()),
-          action: this.focusComposeText,
-        },
-      ];
+        });
+      }
+      return requirements;
     },
     missing_requirements_message() {
       const missing = this.card_requirements
@@ -935,6 +1008,10 @@ export default {
       this.step = "card";
       this.loadSiblingPostcards();
       if (this.is_opened_from_qr && this.has_audio) this.openPlayer();
+      else if (this.is_opened_from_qr && this.visual_is_video) {
+        await this.$nextTick();
+        this.toggleCardVideo();
+      }
     }
   },
   mounted() {
@@ -950,7 +1027,7 @@ export default {
     this.pending_leave = next;
   },
   watch: {
-    has_audio() {
+    has_stamp() {
       this.buildQrVariants();
     },
     // the login modal may resolve after the draft opened
@@ -1144,11 +1221,13 @@ export default {
     guessMediaKindFromFilename(filename) {
       const name = String(filename || "").toLowerCase();
       if (/\.(png|jpe?g|gif|webp|avif|bmp|svg)$/.test(name)) return "image";
+      // .webm stays audio: that's what the recorder produces
+      if (/\.(mp4|m4v|mov|ogv)$/.test(name)) return "video";
       if (/\.(mp3|wav|ogg|m4a|aac|flac|webm|weba)$/.test(name)) return "audio";
       return "";
     },
     mediaKindOf(file) {
-      if (file?.$type === "image" || file?.$type === "audio") return file.$type;
+      if (["image", "audio", "video"].includes(file?.$type)) return file.$type;
       // .webp/.avif uploaded before the server knew them are typed "other"
       if (!file?.$type || file.$type === "other")
         return this.guessMediaKindFromFilename(file?.$media_filename);
@@ -1265,8 +1344,8 @@ export default {
           const from_files = files_by_path[path];
           if (from_files) {
             const from_files_kind = this.mediaKindOf(from_files);
-            if (from_files_kind === "image" && !this.image_media_path) {
-              this.applyLoadedMedia("image", from_files);
+            if (this.isVisualKind(from_files_kind) && !this.image_media_path) {
+              this.applyLoadedMedia(from_files_kind, from_files);
             } else if (from_files_kind === "audio" && !this.audio_media_path) {
               this.applyLoadedMedia("audio", from_files);
             }
@@ -1279,7 +1358,8 @@ export default {
           if (!media_filename || !parent) continue;
 
           const kind = this.guessMediaKindFromFilename(media_filename);
-          if (kind === "image" && !this.image_media_path) {
+          if (this.isVisualKind(kind) && !this.image_media_path) {
+            this.visual_is_video = kind === "video";
             this.image_media_path = path;
             this.image_file_name = media_filename;
             this.image_url = "/" + parent + "/" + media_filename;
@@ -1295,8 +1375,8 @@ export default {
       // Legacy fallback: no source_medias — first image/audio in folder.
       for (const file of files) {
         const kind = this.mediaKindOf(file);
-        if (kind === "image" && !this.image_media_path) {
-          this.applyLoadedMedia("image", file);
+        if (this.isVisualKind(kind) && !this.image_media_path) {
+          this.applyLoadedMedia(kind, file);
         } else if (kind === "audio" && !this.audio_media_path) {
           this.applyLoadedMedia("audio", file);
         }
@@ -1311,8 +1391,8 @@ export default {
         try {
           const file = await this.$api.getFolder({ path });
           const kind = this.mediaKindOf(file);
-          if (kind === "image" && !this.image_media_path) {
-            this.applyLoadedMedia("image", file);
+          if (this.isVisualKind(kind) && !this.image_media_path) {
+            this.applyLoadedMedia(kind, file);
           } else if (kind === "audio" && !this.audio_media_path) {
             this.applyLoadedMedia("audio", file);
           }
@@ -1321,11 +1401,27 @@ export default {
         }
       }
     },
+    isVisualKind(kind) {
+      return kind === "image" || kind === "video";
+    },
+    /** a video card has no separate sound */
+    clearAudio() {
+      if (!this.has_audio) return;
+      this.stopStampAudio();
+      this.show_player = false;
+      this.revokeObjectUrl(this.audio_url);
+      this.audio_url = "";
+      this.audio_file_name = "";
+      this.audio_media_path = "";
+      this.pending_audio_file = null;
+    },
     applyLoadedMedia(kind, file) {
       if (!file?.$path) return;
       const preview = this.mediaPreviewUrl(file);
       const label = this.mediaLabel(file);
-      if (kind === "image") {
+      if (this.isVisualKind(kind)) {
+        this.visual_is_video = kind === "video";
+        if (this.visual_is_video) this.clearAudio();
         this.revokeObjectUrl(this.image_url);
         this.pending_image_file = null;
         this.image_media_path = file.$path;
@@ -1347,7 +1443,8 @@ export default {
       this.folder_media_modal_type = "";
     },
     async onFolderMediaPicked(file) {
-      const kind = this.folder_media_modal_type;
+      const slot = this.folder_media_modal_type;
+      const kind = slot === "visual" ? this.mediaKindOf(file) : slot;
       if (!kind || !file?.$path) return;
       this.applyLoadedMedia(kind, file);
       this.form_error = "";
@@ -1530,19 +1627,21 @@ export default {
       }
 
       if (this.pending_image_file) {
-        this.setGenerationProgress(20, this.$t("postcard_progress_image"));
+        const visual_status = this.$t(
+          this.visual_is_video
+            ? "postcard_progress_video"
+            : "postcard_progress_image"
+        );
+        this.setGenerationProgress(20, visual_status);
         await this.uploadMediaFile("image", this.pending_image_file, {
           onProgress: (event) => {
             if (!event?.total) return;
             const ratio = event.loaded / event.total;
-            this.setGenerationProgress(
-              20 + ratio * 30,
-              this.$t("postcard_progress_image")
-            );
+            this.setGenerationProgress(20 + ratio * 30, visual_status);
           },
         });
       } else if (!this.image_media_path) {
-        throw new Error("Add an image to generate the card.");
+        throw new Error("Add an image or a video to generate the card.");
       }
 
       if (this.pending_audio_file) {
@@ -1619,6 +1718,20 @@ export default {
         this.is_audio_playing = false;
       }
     },
+    async toggleCardVideo() {
+      const video_el = this.$refs.card_video;
+      if (!video_el) return;
+      if (!video_el.paused) {
+        video_el.pause();
+        return;
+      }
+      try {
+        await video_el.play();
+      } catch (err) {
+        // autoplay refused without a tap first: the play button stays
+        this.is_video_playing = false;
+      }
+    },
     async openPlayer({ from_start = false } = {}) {
       this.show_player = true;
       window.addEventListener("resize", this.updateBottomBarHeight);
@@ -1658,10 +1771,13 @@ export default {
       this.qr_simple_url = "";
       this.qr_play_url = "";
 
-      if (!this.has_audio) return;
-
-      const with_play = await this.generateQrBlob({ with_play: true });
-      this.qr_play_url = with_play ? URL.createObjectURL(with_play) : "";
+      if (this.has_audio) {
+        const with_play = await this.generateQrBlob({ with_play: true });
+        this.qr_play_url = with_play ? URL.createObjectURL(with_play) : "";
+      } else if (this.visual_is_video) {
+        const simple = await this.generateQrBlob({ with_play: false });
+        this.qr_simple_url = simple ? URL.createObjectURL(simple) : "";
+      }
     },
     async generateQrBlob({ with_play }) {
       try {
@@ -1714,9 +1830,6 @@ export default {
         URL.revokeObjectURL(url);
       }
     },
-    focusComposeText() {
-      this.$refs.compose_text && this.$refs.compose_text.focus();
-    },
     openImagePicker() {
       this.$refs.image_input && this.$refs.image_input.click();
     },
@@ -1741,7 +1854,10 @@ export default {
       let file = event.target.files && event.target.files[0];
       event.target.value = "";
       if (!file) return;
-      if (this.isHeicFile(file)) {
+      const is_video =
+        /^video\//.test(file.type || "") ||
+        this.guessMediaKindFromFilename(file.name) === "video";
+      if (!is_video && this.isHeicFile(file)) {
         this.is_uploading_image = true;
         try {
           file = await this.convertHeicToJpeg(file);
@@ -1755,6 +1871,8 @@ export default {
         }
       }
       this.revokeObjectUrl(this.image_url);
+      this.visual_is_video = is_video;
+      if (is_video) this.clearAudio();
       this.image_file_name = file.name;
       this.image_url = URL.createObjectURL(file);
       this.image_media_path = "";
@@ -1889,6 +2007,39 @@ export default {
         img.src = src;
       });
     },
+    /** a canvas holding a frame from early in the video, for the cover and exports */
+    captureVideoFrame(src) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement("video");
+        const fail = () => {
+          clearTimeout(timeout);
+          reject(new Error("Could not read a frame of this video."));
+        };
+        const timeout = setTimeout(fail, 20000);
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = "auto";
+        if (src && !src.startsWith("blob:")) {
+          video.crossOrigin = "anonymous";
+        }
+        video.onerror = fail;
+        video.onloadedmetadata = () => {
+          const duration = Number.isFinite(video.duration) ? video.duration : 1;
+          // a little in, to skip a black first frame
+          video.currentTime = Math.min(0.5, duration / 2);
+        };
+        video.onseeked = () => {
+          if (!video.videoWidth || !video.videoHeight) return fail();
+          clearTimeout(timeout);
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext("2d").drawImage(video, 0, 0);
+          resolve(canvas);
+        };
+        video.src = src;
+      });
+    },
     drawCoverImage(ctx, img, x, y, w, h) {
       const scale = Math.max(w / img.width, h / img.height);
       const sw = w / scale;
@@ -1909,7 +2060,9 @@ export default {
       const half = width / 2;
       const pad = Math.round(height * 0.045);
 
-      const photo = await this.loadImage(this.image_url);
+      const photo = this.visual_is_video
+        ? await this.captureVideoFrame(this.image_url)
+        : await this.loadImage(this.image_url);
       this.drawCoverImage(ctx, photo, 0, 0, half, height);
 
       ctx.fillStyle = "#4980c8";
@@ -1917,7 +2070,7 @@ export default {
 
       let rules_top = pad;
 
-      if (this.has_audio) {
+      if (this.has_stamp) {
         const stamp_size = Math.round(height * 0.28);
         const stamp_x = width - pad - stamp_size;
         const stamp_y = pad;
@@ -2021,7 +2174,7 @@ export default {
     },
     async uploadPostcardCover() {
       if (!this.publication?.$path || !this.image_url) return;
-      if (this.has_audio && !this.active_qr_url) {
+      if (this.has_stamp && !this.active_qr_url) {
         await this.buildQrVariants();
       }
       const canvas = await this.renderPostcardCanvas({
@@ -2039,7 +2192,7 @@ export default {
       });
     },
     async renderExportCardCanvas() {
-      if (this.has_audio && !this.active_qr_url) {
+      if (this.has_stamp && !this.active_qr_url) {
         await this.buildQrVariants();
       }
       return this.renderPostcardCanvas({
@@ -2060,7 +2213,9 @@ export default {
         );
       } catch (err) {
         console.error(err);
-        this.export_error = "Export failed. Try again with another image.";
+        this.export_error = this.visual_is_video
+          ? "Export failed. Try again with another video."
+          : "Export failed. Try again with another image.";
       } finally {
         this.is_preparing_share = false;
       }
@@ -2090,7 +2245,9 @@ export default {
         link.click();
       } catch (err) {
         console.error(err);
-        this.export_error = "Export failed. Try again with another image.";
+        this.export_error = this.visual_is_video
+          ? "Export failed. Try again with another video."
+          : "Export failed. Try again with another image.";
       } finally {
         this.is_exporting = false;
       }
@@ -3204,6 +3361,56 @@ export default {
   outline: none;
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--c-slash-orange) 45%, transparent);
+}
+
+/* a video card's stamp only carries the link to the card */
+._postcard--stamp.is--static {
+  cursor: default;
+
+  &:hover {
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  }
+}
+
+._postcard--videoBadge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  color: #fff;
+  font-size: 1.15rem;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+
+._postcard--imagePane video._postcard--image {
+  background: #000;
+}
+
+._postcard--compose video._postcard--image {
+  pointer-events: none;
+}
+
+._postcard--videoPlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--c-slash-orange);
+  color: var(--c-slash-mint);
+  font-size: 2rem;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+
+  .b-icon {
+    margin-left: 0.15em;
+  }
 }
 
 ._postcard--qr {

@@ -65,6 +65,12 @@
             >
               <b-icon icon="soundwave" />
             </span>
+            <span
+              v-else-if="file.$type === 'video'"
+              class="_pickMediaFromFolder--typeBadge"
+            >
+              <b-icon icon="camera-video-fill" />
+            </span>
           </div>
           <span class="_pickMediaFromFolder--name">{{
             mediaLabel(file)
@@ -87,7 +93,8 @@ export default {
     media_type: {
       type: String,
       required: true,
-      validator: (value) => ["image", "audio"].includes(value),
+      // "visual" lists images and videos together
+      validator: (value) => ["image", "audio", "visual"].includes(value),
     },
     folders: {
       type: Array,
@@ -102,15 +109,21 @@ export default {
     };
   },
   computed: {
+    accepted_types() {
+      return this.media_type === "visual"
+        ? ["image", "video"]
+        : [this.media_type];
+    },
     type_label() {
-      return String(this.$t(this.media_type) || this.media_type).toLowerCase();
+      const key = this.media_type === "visual" ? "image_or_video" : this.media_type;
+      return String(this.$t(key) || key).toLowerCase();
     },
     modal_title() {
       return this.$t("pick_media_of_type", { type: this.type_label });
     },
     sorted_files() {
       return this.folder_files
-        .filter((file) => file?.$type === this.media_type)
+        .filter((file) => this.accepted_types.includes(file?.$type))
         .slice()
         .sort(
           (a, b) => +new Date(b.$date_created) - +new Date(a.$date_created)
